@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -15,7 +16,15 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const close = () => setOpen(false);
+
+  const handleLogout = () => {
+    logout();
+    close();
+    navigate('/');
+  };
 
   return (
     <nav className="navbar navbar-expand-lg mc-navbar">
@@ -24,7 +33,6 @@ export default function Navbar() {
           <span className="mc-logo-icon">+</span> MediCare
         </Link>
 
-        {/* Hamburger (mobile) */}
         <button
           className="mc-toggler d-lg-none"
           onClick={() => setOpen(!open)}
@@ -42,9 +50,16 @@ export default function Navbar() {
                 </NavLink>
               </li>
             ))}
+            {user && (
+              <li className="nav-item">
+                <NavLink to="/dashboard" className="nav-link" onClick={close}>
+                  Dashboard
+                </NavLink>
+              </li>
+            )}
           </ul>
 
-          <div className="d-flex align-items-center gap-2 py-2 py-lg-0">
+          <div className="d-flex align-items-center gap-2 py-2 py-lg-0 flex-wrap">
             <button
               className="mc-toggler"
               onClick={toggleTheme}
@@ -53,9 +68,22 @@ export default function Navbar() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            <Link to="/login" className="btn btn-mc-outline" onClick={close}>
-              Login / Register
-            </Link>
+
+            {user ? (
+              <>
+                <span className="mc-user-chip">
+                  {user.name.split(' ')[0]}
+                  <small className="ms-1 mc-muted text-capitalize">({user.role})</small>
+                </span>
+                <button className="btn btn-mc-outline" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="btn btn-mc-outline" onClick={close}>
+                Login / Register
+              </Link>
+            )}
           </div>
         </div>
       </div>

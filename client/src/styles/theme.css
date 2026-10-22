@@ -120,3 +120,73 @@ body {
 .mc-muted {
   color: var(--mc-muted);
 }
+
+/* ---------- Forms ---------- */
+.form-control,
+.form-select {
+  background: var(--mc-surface-2);
+  border: 1px solid var(--mc-border);
+  color: var(--mc-text);
+  min-height: 44px;
+}
+.form-control:focus,
+.form-select:focus {
+  background: var(--mc-surface-2);
+  color: var(--mc-text);
+  border-color: var(--mc-primary);
+  box-shadow: 0 0 0 0.2rem rgba(43, 127, 224, 0.25);
+}
+.form-control::placeholder {
+  color: var(--mc-muted);
+}
+.form-label {
+  font-weight: 500;
+}
+
+/* ---------- Auth page ---------- */
+.mc-auth-wrap {
+  max-width: 460px;
+  margin: 0 auto;
+}
+.mc-auth-tabs {
+  display: flex;
+  background: var(--mc-surface-2);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+.mc-auth-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--mc-muted);
+  border-radius: 8px;
+  font-weight: 600;
+}
+.mc-auth-tabs button.active {
+  background: var(--mc-primary);
+  color: var(--mc-primary-contrast);
+}
+
+/* ---------- Small helpers ---------- */
+.mc-user-chip {
+  color: var(--mc-text);
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+.mc-badge {
+  display: inline-block;
+  background: var(--mc-surface-2);
+  color: var(--mc-primary);
+  border: 1px solid var(--mc-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--mc-text);
+  --bs-table-border-color: var(--mc-border);
+}
