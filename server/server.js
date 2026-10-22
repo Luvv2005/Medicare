@@ -9,6 +9,7 @@ import morgan from 'morgan';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import doctorRoutes from './routes/doctorRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 if (!process.env.JWT_SECRET) {
@@ -32,6 +33,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/doctors', doctorRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use(notFound);

@@ -1,20 +1,22 @@
 import { Router } from 'express';
-import User from '../models/User.js';
 import { protect, authorize } from '../middleware/auth.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import {
+  listUsers,
+  listDoctors,
+  approveDoctor,
+  rejectDoctor,
+  listAuditLogs,
+} from '../controllers/adminController.js';
 
 const router = Router();
 
 // Is file ke SAARE routes sirf admin ke liye
 router.use(protect, authorize('admin'));
 
-// GET /api/admin/users
-router.get(
-  '/users',
-  asyncHandler(async (req, res) => {
-    const users = await User.find().sort({ createdAt: -1 });
-    res.json({ count: users.length, users });
-  })
-);
+router.get('/users', listUsers);
+router.get('/doctors', listDoctors);
+router.patch('/doctors/:id/approve', approveDoctor);
+router.patch('/doctors/:id/reject', rejectDoctor);
+router.get('/audit-logs', listAuditLogs);
 
 export default router;
