@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Doctor from '../models/Doctor.js';
@@ -5,6 +6,10 @@ import generateToken from '../utils/generateToken.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import escapeRegex from '../utils/escapeRegex.js';
 import { SPECIALIZATIONS } from '../utils/constants.js';
+import parseQuery from '../utils/parseQuery.js';
+import { levenshtein, allowedDistance } from '../utils/fuzzy.js';
+
+
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[6-9]\d{9}$/;
@@ -114,37 +119,131 @@ export const registerDoctor = asyncHandler(async (req, res) => {
 });
 
 // GET /api/doctors  (public, sirf approved)
+// export const listDoctors = asyncHandler(async (req, res) => {
+//   const { q, specialization, city, mode, maxFee } = req.query;
+//   const page = Math.max(parseInt(req.query.page) || 1, 1);
+//   const limit = Math.min(Math.max(parseInt(req.query.limit) || 12, 1), 50);
+
+//   const filter = { status: 'approved' };
+
+//   if (q) {
+//     const rx = new RegExp(escapeRegex(q.trim()), 'i'); // 'i' = case-insensitive
+//     filter.$or = [{ name: rx }, { specialization: rx }, { 'clinic.city': rx }];
+//   }
+//   if (specialization) {
+//     filter.specialization = new RegExp(`^${escapeRegex(specialization.trim())}$`, 'i');
+//   }
+//   if (city) {
+//     filter['clinic.city'] = new RegExp(`^${escapeRegex(city.trim())}$`, 'i');
+//   }
+//   if (mode === 'online') filter['modes.online'] = true;
+//   if (mode === 'in-person') filter['modes.inPerson'] = true;
+//   if (maxFee && Number.isFinite(Number(maxFee))) filter.consultationFee = { $lte: Number(maxFee) };
+
+//   const [total, doctors] = await Promise.all([
+//     Doctor.countDocuments(filter),
+//     Doctor.find(filter)
+//       .select(PUBLIC_EXCLUDE)
+//       .sort({ 'rating.value': -1, experienceYears: -1 })
+//       .skip((page - 1) * limit)
+//       .limit(limit),
+//   ]);
+
+//   res.json({ total, page, pages: Math.ceil(total / limit), doctors });
+// });
+
+const isNum = (v) => v !== undefined && v !== '' && Number.isFinite(Number(v));
+const exactRx = (text) => new RegExp(`^${escapeRegex(String(text).trim())}$`, 'i');
+
+const SORTS = {
+  rating: { 'rating.value': -1, experienceYears: -1, _id: 1 },
+  fee_asc: { consultationFee: 1, _id: 1 },
+  fee_desc: { consultationFee: -1, _id: 1 },
+  exp: { experienceYears: -1, _id: 1 },
+};
+
+// GET /api/doctors/cities  (filter dropdown ke liye)
+export const getCities = asyncHandler(async (req, res) => {
+  const cities = await Doctor.distinct('clinic.city', { status: 'approved' });
+  res.json({ cities: cities.sort((a, b) => a.localeCompare(b)) });
+});
+
+// GET /api/doctors  (public, sirf approved)
 export const listDoctors = asyncHandler(async (req, res) => {
-  const { q, specialization, city, mode, maxFee } = req.query;
+  const { q, specialization, city, mode, minFee, maxFee, minExp, sort, lat, lng, radius } = req.query;
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 12, 1), 50);
 
   const filter = { status: 'approved' };
 
-  if (q) {
-    const rx = new RegExp(escapeRegex(q.trim()), 'i'); // 'i' = case-insensitive
-    filter.$or = [{ name: rx }, { specialization: rx }, { 'clinic.city': rx }];
-  }
-  if (specialization) {
-    filter.specialization = new RegExp(`^${escapeRegex(specialization.trim())}$`, 'i');
-  }
-  if (city) {
-    filter['clinic.city'] = new RegExp(`^${escapeRegex(city.trim())}$`, 'i');
-  }
+  if (specialization) filter.specialization = exactRx(specialization);
+  if (city) filter['clinic.city'] = exactRx(city);
   if (mode === 'online') filter['modes.online'] = true;
   if (mode === 'in-person') filter['modes.inPerson'] = true;
-  if (maxFee && Number.isFinite(Number(maxFee))) filter.consultationFee = { $lte: Number(maxFee) };
+
+  const fee = {};
+  if (isNum(minFee)) fee.$gte = Number(minFee);
+  if (isNum(maxFee)) fee.$lte = Number(maxFee);
+  if (Object.keys(fee).length) filter.consultationFee = fee;
+
+  if (isNum(minExp)) filter.experienceYears = { $gte: Number(minExp) };
+
+  // Nearby: radius km ko radians mein badalte hain (earth radius 6378.1 km)
+  if (isNum(lat) && isNum(lng)) {
+    const km = isNum(radius) ? Math.min(Number(radius), 500) : 10;
+    filter['clinic.location'] = {
+      $geoWithin: { $centerSphere: [[Number(lng), Number(lat)], km / 6378.1] },
+    };
+  }
+
+  // ---- Smart search ----
+  let interpreted = null;
+  let nameTokens = [];
+  if (q && String(q).trim()) {
+    const cities = await Doctor.distinct('clinic.city', { status: 'approved' });
+    const parsed = parseQuery(q, cities);
+    interpreted = {
+      specialization: parsed.specialization,
+      city: parsed.city,
+      name: parsed.nameTokens.join(' '),
+    };
+    if (!specialization && parsed.specialization) filter.specialization = exactRx(parsed.specialization);
+    if (!city && parsed.city) filter['clinic.city'] = exactRx(parsed.city);
+    nameTokens = parsed.nameTokens;
+  }
+
+  let finalFilter = filter;
+  if (nameTokens.length) {
+    const direct = {
+      ...filter,
+      $and: nameTokens.map((t) => ({ name: new RegExp(escapeRegex(t), 'i') })),
+    };
+    if ((await Doctor.countDocuments(direct)) > 0) {
+      finalFilter = direct;
+    } else {
+      const candidates = await Doctor.find(filter).select('name');
+      const ids = candidates
+        .filter((c) => {
+          const words = c.name.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+          return nameTokens.every((t) =>
+            words.some((w) => levenshtein(t, w) <= allowedDistance(t))
+          );
+        })
+        .map((c) => c._id);
+      finalFilter = { ...filter, _id: { $in: ids } };
+    }
+  }
 
   const [total, doctors] = await Promise.all([
-    Doctor.countDocuments(filter),
-    Doctor.find(filter)
+    Doctor.countDocuments(finalFilter),
+    Doctor.find(finalFilter)
       .select(PUBLIC_EXCLUDE)
-      .sort({ 'rating.value': -1, experienceYears: -1 })
+      .sort(SORTS[sort] || SORTS.rating)
       .skip((page - 1) * limit)
       .limit(limit),
   ]);
 
-  res.json({ total, page, pages: Math.ceil(total / limit), doctors });
+  res.json({ total, page, pages: Math.ceil(total / limit), interpreted, doctors });
 });
 
 // GET /api/doctors/:id  (public, sirf approved)

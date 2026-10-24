@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getSpecializations,
+  getCities,
   registerDoctor,
   listDoctors,
   getDoctor,
@@ -13,9 +14,10 @@ import { authLimiter } from '../middleware/rateLimiter.js';
 const router = Router();
 
 router.get('/specializations', getSpecializations);
+router.get('/cities', getCities);
 router.post('/register', authLimiter, registerDoctor);
 
-// Ye "/:id" se PEHLE hone chahiye, warna "me" ko id samajh liya jayega
+// Ye "/:id" se PEHLE hone chahiye
 router.get('/me/profile', protect, authorize('doctor'), getMyProfile);
 router.put('/me/profile', protect, authorize('doctor'), updateMyProfile);
 
