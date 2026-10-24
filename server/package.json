@@ -9,7 +9,8 @@
     "start": "node server.js",
     "create-admin": "node scripts/createAdmin.js",
     "seed:demo": "node scripts/seedDemo.js",
-  "seed:demo:remove": "node scripts/seedDemo.js --remove"
+  "seed:demo:remove": "node scripts/seedDemo.js --remove",
+  "test:race": "node scripts/testRace.js"
   },
   "keywords": [],
   "author": "",

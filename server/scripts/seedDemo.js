@@ -5,6 +5,8 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Doctor from '../models/Doctor.js';
+import Availability from '../models/Availability.js';
+import Appointment from '../models/Appointment.js';
 
 const removeOnly = process.argv.includes('--remove');
 
@@ -52,13 +54,27 @@ const demoDoctors = [
     modes: { online: true, inPerson: true } },
 ];
 
+// const removeDemo = async () => {
+//   // SIRF isDemo: true. Real data ko kabhi nahi chhuta.
+//   const demoUsers = await User.find({ isDemo: true }).select('_id');
+//   const ids = demoUsers.map((u) => u._id);
+//   const d = await Doctor.deleteMany({ isDemo: true });
+//   const u = await User.deleteMany({ isDemo: true, _id: { $in: ids } });
+//   console.log(`Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}`);
+// };
+
 const removeDemo = async () => {
-  // SIRF isDemo: true. Real data ko kabhi nahi chhuta.
-  const demoUsers = await User.find({ isDemo: true }).select('_id');
-  const ids = demoUsers.map((u) => u._id);
+  // SIRF demo records. Real doctors/users/appointments ko nahi chhuta.
+  const demoDocs = await Doctor.find({ isDemo: true }).select('_id');
+  const docIds = demoDocs.map((d) => d._id);
+
+  const a = await Appointment.deleteMany({ doctor: { $in: docIds } });
+  const av = await Availability.deleteMany({ doctor: { $in: docIds } });
   const d = await Doctor.deleteMany({ isDemo: true });
-  const u = await User.deleteMany({ isDemo: true, _id: { $in: ids } });
-  console.log(`Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}`);
+  const u = await User.deleteMany({ isDemo: true });
+  console.log(
+    `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}`
+  );
 };
 
 const run = async () => {
@@ -79,7 +95,7 @@ const run = async () => {
       isDemo: true,
     });
 
-    await Doctor.create({
+    const doctor = await Doctor.create({
       user: user._id,
       name: d.name,
       specialization: d.spec,
@@ -102,6 +118,19 @@ const run = async () => {
       payAtClinic: d.modes.inPerson,
       status: d.status || 'approved',
       rating: { value: d.rating, count: d.ratingCount, isDemo: true },
+      isDemo: true,
+    });
+
+    // Demo availability: Mon-Sat, subah 10-1 aur shaam 5-8, 15 minute ke slots
+    const demoSessions = [];
+    for (let day = 1; day <= 6; day++) {
+      demoSessions.push({ day, start: '10:00', end: '13:00', mode: 'both' });
+      demoSessions.push({ day, start: '17:00', end: '20:00', mode: 'both' });
+    }
+    await Availability.create({
+      doctor: doctor._id,
+      slotMinutes: 15,
+      sessions: demoSessions,
       isDemo: true,
     });
   }

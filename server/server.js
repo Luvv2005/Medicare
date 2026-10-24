@@ -11,6 +11,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import appointmentRoutes from './routes/appointmentRoutes.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is missing in .env');
@@ -35,6 +36,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
