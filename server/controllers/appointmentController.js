@@ -181,6 +181,11 @@ export const cancelAppointment = asyncHandler(async (req, res) => {
   if (!['held', 'confirmed'].includes(appointment.status))
     return res.status(400).json({ message: `Cannot cancel an appointment that is ${appointment.status}` });
   if (slotInstant(appointment.date, appointment.startTime) <= new Date())
+      // Paid appointment ka refund workflow Step 9 mein aayega. Tab tak cancel nahi.
+  if (appointment.paymentStatus === 'paid')
+    return res.status(400).json({
+      message: 'Paid appointments can be cancelled with refund only after Step 9 is built',
+    });
     return res.status(400).json({ message: 'This appointment time has already passed' });
 
   appointment.status = 'cancelled';

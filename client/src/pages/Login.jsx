@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[6-9]\d{9}$/;
@@ -211,6 +211,10 @@ export default function Login() {
                 : 'Create account'}
             </button>
           </form>
+          <p className="text-center mc-muted mt-3 mb-0">
+            Are you a doctor?{' '}
+            <Link to="/doctor/register">Register as a doctor</Link>
+          </p>
         </div>
       </div>
     </div>

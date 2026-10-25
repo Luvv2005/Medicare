@@ -34,3 +34,6 @@ export const apiPost = (path, body) =>
 export const apiPut = (path, body) =>
   request(path, { method: 'PUT', body: JSON.stringify(body) });
 export const apiDelete = (path) => request(path, { method: 'DELETE' });
+
+export const apiPatch = (path, body) =>
+  request(path, { method: 'PATCH', body: JSON.stringify(body || {}) });

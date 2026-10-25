@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { apiGet } from '../services/api';
 import { FEATURES } from '../config/features';
 import { initials, avatarColor, mapsUrl, directionsUrl } from '../utils/doctorUtils';
+import BookingPanel from '../components/BookingPanel';
 
 export default function DoctorProfile() {
   const { id } = useParams();
@@ -102,6 +103,12 @@ export default function DoctorProfile() {
         </div>
 
         {/* Booking side card */}
+         <div className="col-lg-4">
+          <BookingPanel doctor={d} />
+          {FEATURES.chat && (
+            <Link to="/chat" className="btn btn-mc-outline w-100 mt-3">Chat with doctor</Link>
+          )}
+        </div>
         <div className="col-lg-4">
           <div className="mc-card mc-sticky" id="book">
             <h5>Book appointment</h5>

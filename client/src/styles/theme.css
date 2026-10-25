@@ -361,3 +361,112 @@ body {
   position: sticky;
   top: 80px;
 }
+
+/* ---------- Booking ---------- */
+.mc-days {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+}
+.mc-day {
+  flex: 0 0 auto;
+  min-width: 78px;
+  min-height: 52px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--mc-border);
+  border-radius: 10px;
+  background: var(--mc-surface);
+  color: var(--mc-text);
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+.mc-day.active {
+  background: var(--mc-primary);
+  border-color: var(--mc-primary);
+  color: var(--mc-primary-contrast);
+}
+.mc-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.5rem;
+}
+.mc-slot {
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--mc-primary);
+  background: transparent;
+  color: var(--mc-primary);
+  font-size: 0.9rem;
+}
+.mc-slot:disabled {
+  border-color: var(--mc-border);
+  color: var(--mc-muted);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.mc-slot.active {
+  background: var(--mc-primary);
+  color: var(--mc-primary-contrast);
+}
+.mc-chip--bad {
+  color: #e5534b;
+  border-color: #e5534b;
+}
+@media (max-width: 991.98px) {
+  .mc-sticky {
+    position: static;
+  }
+}
+
+/* ---------- Payment modal ---------- */
+.mc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 2000;
+}
+.mc-modal {
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ---------- Dashboards ---------- */
+.mc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+.mc-stat {
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+.mc-stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--mc-primary);
+}
+.mc-appt {
+  border-top: 1px solid var(--mc-border);
+  padding: 0.9rem 0;
+}
+
+/* ---------- Forms: sections & links ---------- */
+.mc-section {
+  margin: 1.2rem 0 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--mc-border);
+  font-weight: 700;
+}
+.mc-auth-wrap a,
+.mc-card p a {
+  color: var(--mc-primary);
+  font-weight: 600;
+}

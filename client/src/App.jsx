@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorProfile from './pages/DoctorProfile';
+import DoctorRegister from './pages/DoctorRegister';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/doctor/register" element={<DoctorRegister />} />
 
           {/* Login zaroori */}
           <Route
