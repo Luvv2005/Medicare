@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '../services/api';
+import AdminProducts from '../components/AdminProducts';
+import AdminOrders from '../components/AdminOrders';
 
 const TABS = [
   { key: 'doctors', label: 'Doctors' },
   { key: 'users', label: 'Users' },
   { key: 'audit', label: 'Audit logs' },
+  { key: 'products', label: 'Products' },
+  { key: 'orders', label: 'Orders' },
 ];
 const STATUSES = ['pending', 'approved', 'rejected', 'all'];
 const STATUS_CHIP = { pending: 'mc-chip--demo', approved: 'mc-chip--ok', rejected: 'mc-chip--bad' };
@@ -209,7 +213,7 @@ export default function AdminDashboard() {
   return (
     <div className="container-xl py-4">
       <h3 className="mb-3">Admin Dashboard</h3>
-      <div className="mc-auth-tabs mb-3" style={{ maxWidth: 480 }}>
+      <div className="mc-auth-tabs mb-3" style={{ maxWidth: 680 }}>
         {TABS.map((t) => (
           <button key={t.key} type="button" className={tab === t.key ? 'active' : ''} onClick={() => setTab(t.key)}>
             {t.label}
@@ -217,6 +221,8 @@ export default function AdminDashboard() {
         ))}
       </div>
       {tab === 'doctors' && <Doctors />}
+      {tab === 'products' && <AdminProducts />}
+      {tab === 'orders' && <AdminOrders />}
       {tab === 'users' && <Users />}
       {tab === 'audit' && <AuditLogs />}
     </div>

@@ -13,6 +13,9 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorProfile from './pages/DoctorProfile';
 import DoctorRegister from './pages/DoctorRegister';
+import ProductDetail from './pages/ProductDetail';
+import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
 
 export default function App() {
   return (
@@ -48,7 +51,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route path="/medicines/:id" element={<ProductDetail />} 
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute roles={['patient']}>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute roles={['patient']}>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+          
           {/* Sirf admin */}
           <Route
             path="/admin"

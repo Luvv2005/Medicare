@@ -7,6 +7,9 @@ import User from '../models/User.js';
 import Doctor from '../models/Doctor.js';
 import Availability from '../models/Availability.js';
 import Appointment from '../models/Appointment.js';
+import Product from '../models/Product.js';
+import Order from '../models/Order.js';
+import { demoProducts } from '../data/demoProducts.js';
 
 const removeOnly = process.argv.includes('--remove');
 
@@ -63,8 +66,22 @@ const demoDoctors = [
 //   console.log(`Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}`);
 // };
 
+// const removeDemo = async () => {
+//   // SIRF demo records. Real doctors/users/appointments ko nahi chhuta.
+//   const demoDocs = await Doctor.find({ isDemo: true }).select('_id');
+//   const docIds = demoDocs.map((d) => d._id);
+
+//   const a = await Appointment.deleteMany({ doctor: { $in: docIds } });
+//   const av = await Availability.deleteMany({ doctor: { $in: docIds } });
+//   const d = await Doctor.deleteMany({ isDemo: true });
+//   const u = await User.deleteMany({ isDemo: true });
+//   console.log(
+//     `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}`
+//   );
+// };
+
 const removeDemo = async () => {
-  // SIRF demo records. Real doctors/users/appointments ko nahi chhuta.
+  // SIRF demo records. Real doctors/users/products/orders ko nahi chhuta.
   const demoDocs = await Doctor.find({ isDemo: true }).select('_id');
   const docIds = demoDocs.map((d) => d._id);
 
@@ -72,8 +89,10 @@ const removeDemo = async () => {
   const av = await Availability.deleteMany({ doctor: { $in: docIds } });
   const d = await Doctor.deleteMany({ isDemo: true });
   const u = await User.deleteMany({ isDemo: true });
+  const p = await Product.deleteMany({ isDemo: true });
+  const o = await Order.deleteMany({ isDemo: true });
   console.log(
-    `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}`
+    `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}, demo products: ${p.deletedCount}, demo orders: ${o.deletedCount}`
   );
 };
 
@@ -134,7 +153,23 @@ const run = async () => {
       isDemo: true,
     });
   }
-
+  
+    await Product.insertMany(
+    demoProducts.map((p) => ({
+      name: p.name,
+      description: p.desc,
+      category: p.category,
+      brand: p.brand,
+      price: p.price,
+      mrp: p.mrp,
+      stock: p.stock,
+      requiresPrescription: p.rx,
+      icon: p.icon,
+      status: 'approved',
+      isDemo: true,
+    }))
+  );
+  console.log(`Seeded ${demoProducts.length} demo products`);
   console.log(`Seeded ${demoDoctors.length} demo doctors (password for all: ${DEMO_PASSWORD})`);
 };
 

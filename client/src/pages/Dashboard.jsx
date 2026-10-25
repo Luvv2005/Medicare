@@ -22,7 +22,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {user.role === 'patient' && <PatientDashboard />}
+      {user.role === 'patient' && (
+        <>
+          <div className="mb-3">
+            <Link to="/orders" className="btn btn-mc-outline">My medicine orders</Link>
+          </div>
+          <PatientDashboard />
+        </>
+      )}
       {user.role === 'doctor' && <DoctorDashboard />}
     </div>
   );

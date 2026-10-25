@@ -12,6 +12,10 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import Appointment from './models/Appointment.js';
 import { paymentMode } from './config/payment.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import { releaseExpiredOrders } from './utils/stock.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is missing in .env');
@@ -38,6 +42,9 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -50,6 +57,9 @@ const sweepExpiredHolds = async () => {
       { status: 'expired', isActive: false }
     );
     if (r.modifiedCount) console.log(`Expired ${r.modifiedCount} unpaid hold(s)`);
+        const n = await releaseExpiredOrders();
+    if (n) console.log(`Cancelled ${n} unpaid order(s) and released stock`);
+    
   } catch (err) {
     console.error('Hold sweep failed:', err.message);
   }

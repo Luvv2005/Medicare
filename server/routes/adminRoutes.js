@@ -7,6 +7,13 @@ import {
   rejectDoctor,
   listAuditLogs,
 } from '../controllers/adminController.js';
+import {
+  listProducts,
+  createProduct,
+  updateProduct,
+  listOrders,
+  updateOrderStatus,
+} from '../controllers/adminStoreController.js';
 
 const router = Router();
 
@@ -18,5 +25,11 @@ router.get('/doctors', listDoctors);
 router.patch('/doctors/:id/approve', approveDoctor);
 router.patch('/doctors/:id/reject', rejectDoctor);
 router.get('/audit-logs', listAuditLogs);
+
+router.get('/products', listProducts);
+router.post('/products', createProduct);
+router.put('/products/:id', updateProduct);
+router.get('/orders', listOrders);
+router.patch('/orders/:id/status', updateOrderStatus);
 
 export default router;

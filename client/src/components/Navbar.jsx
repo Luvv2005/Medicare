@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { count } = useCart();
   const navigate = useNavigate();
   const close = () => setOpen(false);
 
@@ -45,8 +47,9 @@ export default function Navbar() {
           <ul className="navbar-nav mx-auto">
             {links.map((l) => (
               <li className="nav-item" key={l.to}>
-                <NavLink to={l.to} end={l.to === '/'} className="nav-link" onClick={close}>
-                  {l.label}
+                <NavLink to={l.to} end={l.to === '/'} className="nav-link" onClick={close}
+                >
+                {l.to === '/cart' ? `Cart (${count})` : l.label}
                 </NavLink>
               </li>
             ))}
