@@ -4,6 +4,7 @@ import { apiGet } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import useDebounce from '../hooks/useDebounce';
 import DoctorCard from '../components/DoctorCard';
+import PageHeader from '../components/PageHeader';
 
 const EXPERIENCE = [
   { value: '', label: 'Any' },
@@ -22,6 +23,30 @@ const MODES = [
   { value: 'online', label: 'Online consult' },
   { value: 'in-person', label: 'In-person visit' },
 ];
+const AVAILABILITY = [
+  { value: '', label: 'Any time' },
+  { value: 'today', label: 'Today' },
+  { value: 'tomorrow', label: 'Tomorrow' },
+  { value: 'week', label: 'Next 7 days' },
+];
+
+function Radio({ name, options, current, onPick }) {
+  return options.map((o) => (
+    <div className="form-check mb-1" key={o.value || 'any'}>
+      <input
+        className="form-check-input"
+        type="radio"
+        name={name}
+        id={`${name}-${o.value || 'any'}`}
+        checked={current === o.value}
+        onChange={() => onPick(o.value)}
+      />
+      <label className="form-check-label" htmlFor={`${name}-${o.value || 'any'}`}>
+        {o.label}
+      </label>
+    </div>
+  ));
+}
 
 export default function FindDoctor() {
   const { theme } = useTheme();
@@ -38,12 +63,10 @@ export default function FindDoctor() {
   const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Location: sirf memory mein (URL mein nahi), user ke permission ke baad
   const [userLoc, setUserLoc] = useState(null);
   const [radius, setRadius] = useState('');
   const [locMsg, setLocMsg] = useState('');
 
-  // URL ka ek param badlo. Filter badalne par page 1 par wapas.
   const setParam = (key, value) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -52,22 +75,19 @@ export default function FindDoctor() {
     setParams(next, { replace: true });
   };
 
-  // Dropdown data ek baar
   useEffect(() => {
     apiGet('/doctors/specializations').then((d) => setSpecs(d.specializations)).catch(() => {});
     apiGet('/doctors/cities').then((d) => setCities(d.cities)).catch(() => {});
   }, []);
 
-  // Typing rukne ke baad search URL mein jaati hai
   useEffect(() => {
     if (debounced.trim() !== get('q')) setParam('q', debounced.trim());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
 
-  // URL badalte hi doctors laao
   useEffect(() => {
     const qs = new URLSearchParams();
-    ['q', 'specialization', 'city', 'mode', 'sort', 'minExp', 'page'].forEach((k) => {
+    ['q', 'specialization', 'city', 'mode', 'sort', 'minExp', 'availability', 'page'].forEach((k) => {
       if (get(k)) qs.set(k, get(k));
     });
     const fee = get('fee');
@@ -106,6 +126,7 @@ export default function FindDoctor() {
       () => setLocMsg('Location permission denied. You can still search by city.'),
       { timeout: 10000 }
     );
+    return undefined;
   };
 
   const stopLocation = () => {
@@ -125,29 +146,10 @@ export default function FindDoctor() {
   const page = Number(get('page')) || 1;
   const it = data.interpreted;
 
-  const Radio = ({ name, options, current, onPick }) =>
-    options.map((o) => (
-      <div className="form-check mb-1" key={o.value || 'any'}>
-        <input
-          className="form-check-input"
-          type="radio"
-          name={name}
-          id={`${name}-${o.value || 'any'}`}
-          checked={current === o.value}
-          onChange={() => onPick(o.value)}
-        />
-        <label className="form-check-label" htmlFor={`${name}-${o.value || 'any'}`}>
-          {o.label}
-        </label>
-      </div>
-    ));
-
   return (
     <div className="container-xl py-4">
-      <h2 className="mb-1">Find a Doctor</h2>
-      <p className="mc-muted">Search verified doctors by name, specialization or city.</p>
+      <PageHeader title="Find a Doctor" subtitle="Search verified doctors by name, specialization or city." />
 
-      {/* Search */}
       <form
         className="d-flex gap-2 mb-3"
         onSubmit={(e) => { e.preventDefault(); setParam('q', searchText.trim()); }}
@@ -162,7 +164,6 @@ export default function FindDoctor() {
         <button className="btn btn-mc-primary" type="submit">Search</button>
       </form>
 
-      {/* Specialization chips (swipe on mobile) */}
       <div className="mc-chips mb-3">
         <button
           className={`mc-chip-btn ${!get('specialization') ? 'active' : ''}`}
@@ -198,12 +199,17 @@ export default function FindDoctor() {
       </div>
 
       <div className="row g-4">
-        {/* Filters */}
         <aside className={`col-lg-3 ${showFilters ? '' : 'd-none d-lg-block'}`}>
-          <div className="mc-card">
+          <div className="mc-card mc-filter-sticky">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h5 className="mb-0">Filters</h5>
               <button className="btn btn-link p-0" onClick={clearAll}>Clear All</button>
+            </div>
+
+            <div className="mc-filter-group">
+              <h6>Availability</h6>
+              <Radio name="avail" options={AVAILABILITY} current={get('availability')}
+                onPick={(v) => setParam('availability', v)} />
             </div>
 
             <div className="mc-filter-group">
@@ -247,14 +253,9 @@ export default function FindDoctor() {
               )}
               {locMsg && <div className="small mc-muted mt-2">{locMsg}</div>}
             </div>
-
-            <p className="small mc-muted mb-0">
-              Availability filter will arrive with appointment slots (Step 6).
-            </p>
           </div>
         </aside>
 
-        {/* Results */}
         <section className="col-lg-9">
           {it && (it.specialization || it.city) && (
             <div className="mc-note mb-3">

@@ -32,7 +32,6 @@ export function AuthProvider({ children }) {
   const register = async (form) =>
     startSession(await apiPost('/auth/register', form));
 
-  // Doctor registration: role 'doctor', status hamesha 'pending'
   const registerDoctor = async (form) =>
     startSession(await apiPost('/doctors/register', form));
 
@@ -42,7 +41,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, registerDoctor, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, registerDoctor, logout }}>
       {children}
     </AuthContext.Provider>
   );

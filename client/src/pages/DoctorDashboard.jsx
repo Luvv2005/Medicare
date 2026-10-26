@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import AvailabilityEditor from '../components/AvailabilityEditor';
+import DoctorProfileEditor from '../components/DoctorProfileEditor';
 import { formatDate, formatTime, istToday } from '../utils/dates';
 import { effStatus, STATUS_CHIP, statusLabel, payLabel, refundLabel } from '../utils/appointmentUi';
 
@@ -17,7 +18,7 @@ function SessionCancel({ onDone }) {
     setMsg('');
     if (!date) return setError('Choose a date');
     if (reason.trim().length < 5) return setError('Please give a reason (min 5 characters)');
-    if (!window.confirm('Cancel this session? All booked patients will be notified and online payments refunded.')) return;
+    if (!window.confirm('Cancel this session? All booked patients will be notified and online payments refunded.')) return undefined;
 
     setBusy(true);
     try {
@@ -30,6 +31,7 @@ function SessionCancel({ onDone }) {
     } finally {
       setBusy(false);
     }
+    return undefined;
   };
 
   return (
@@ -146,16 +148,20 @@ export default function DoctorDashboard() {
         ))}
       </div>
 
-      <div className="mc-auth-tabs mb-3" style={{ maxWidth: 420 }}>
+      <div className="mc-auth-tabs mb-3" style={{ maxWidth: 560 }}>
         <button type="button" className={tab === 'appointments' ? 'active' : ''} onClick={() => setTab('appointments')}>
           Appointments
         </button>
         <button type="button" className={tab === 'availability' ? 'active' : ''} onClick={() => setTab('availability')}>
           Availability
         </button>
+        <button type="button" className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>
+          Profile
+        </button>
       </div>
 
       {tab === 'availability' && <AvailabilityEditor />}
+      {tab === 'profile' && <DoctorProfileEditor />}
 
       {tab === 'appointments' && (
         <>

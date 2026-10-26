@@ -70,7 +70,7 @@ export default function Cart() {
 
   return (
     <div className="container-xl py-4">
-      <h2 className="mb-3">Your cart ({cart.count})</h2>
+      <h2 className="mb-3 text-center">Your cart ({cart.count})</h2>
       {error && <div className="alert alert-danger py-2">{error}</div>}
 
       <div className="row g-4">
@@ -138,3 +138,6 @@ export default function Cart() {
     </div>
   );
 }
+
+
+

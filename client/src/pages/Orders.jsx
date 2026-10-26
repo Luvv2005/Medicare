@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { apiGet, apiPatch } from '../services/api';
 import OrderPayModal from '../components/OrderPayModal';
+import PageHeader from '../components/PageHeader';
 import { effOrderStatus, ORDER_LABEL, ORDER_CHIP, orderPayLabel, money } from '../utils/orderUi';
 import { refundLabel } from '../utils/appointmentUi';
 
@@ -33,8 +34,8 @@ export default function Orders() {
     setMsg('');
     setBusyId(o._id);
     try {
-      await apiPatch(`/orders/${o._id}/cancel`);
-      setMsg(`Order ${o.orderNo} cancelled.`);
+      const r = await apiPatch(`/orders/${o._id}/cancel`);
+      setMsg(r.message || `Order ${o.orderNo} cancelled.`);
     } catch (err) {
       setMsg(err.message);
     } finally {
@@ -53,14 +54,14 @@ export default function Orders() {
         />
       )}
 
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h2 className="mb-0">My orders</h2>
+      <PageHeader title="My orders" subtitle="Track your medicine orders and refunds." />
+      <div className="text-center mb-3">
         <Link to="/buy-medicines" className="btn btn-mc-primary btn-mc-sm">Shop more</Link>
       </div>
 
       {msg && <div className="alert alert-info py-2">{msg}</div>}
       {error && <div className="alert alert-danger py-2">{error}</div>}
-      {loading && <p className="mc-muted">Loading...</p>}
+      {loading && <p className="mc-muted text-center">Loading...</p>}
       {!loading && !error && orders.length === 0 && (
         <div className="mc-card"><p className="mc-muted mb-0">No orders yet.</p></div>
       )}
@@ -111,8 +112,7 @@ export default function Orders() {
               <div className="small mt-2">
                 <span className="mc-chip mc-chip--demo">{refundLabel(o.refundStatus)}</span>{' '}
                 {money(o.refundAmount)} refund.{' '}
-                <span className="mc-muted">Actual time to reach you depends on your bank or payment provider.    
-                </span>
+                <span className="mc-muted">Actual time to reach you depends on your bank or payment provider.</span>
               </div>
             )}
           </div>

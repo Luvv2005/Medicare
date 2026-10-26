@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiGet } from '../services/api';
+import PageHeader from '../components/PageHeader';
 
 export default function Categories() {
   const [cats, setCats] = useState([]);
@@ -16,10 +17,9 @@ export default function Categories() {
 
   return (
     <div className="container-xl py-4">
-      <h2 className="mb-1">Categories</h2>
-      <p className="mc-muted">Browse healthcare products by category.</p>
+      <PageHeader title="Categories" subtitle="Browse healthcare products by category." />
 
-      {loading && <p className="mc-muted">Loading...</p>}
+      {loading && <p className="mc-muted text-center">Loading...</p>}
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="mc-cat-grid">
@@ -32,7 +32,7 @@ export default function Categories() {
         ))}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 text-center">
         <Link to="/find-doctor" className="btn btn-mc-outline">Looking for a doctor instead?</Link>
       </div>
     </div>

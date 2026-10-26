@@ -4,6 +4,7 @@ import { apiGet } from '../services/api';
 import useDebounce from '../hooks/useDebounce';
 import useAddToCart from '../hooks/useAddToCart';
 import ProductCard from '../components/ProductCard';
+import PageHeader from '../components/PageHeader';
 
 export default function BuyMedicines() {
   const [params, setParams] = useSearchParams();
@@ -62,8 +63,7 @@ export default function BuyMedicines() {
 
   return (
     <div className="container-xl py-4">
-      <h2 className="mb-1">Buy Medicines</h2>
-      <p className="mc-muted">Medicines, vitamins, skincare and everyday healthcare products.</p>
+      <PageHeader title="Buy Medicines" subtitle="Medicines, vitamins, skincare and everyday healthcare products." />
 
       {msg && <div className="mc-note mb-3" role="status">{msg}</div>}
 

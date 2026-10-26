@@ -24,8 +24,10 @@ export default function Dashboard() {
 
       {user.role === 'patient' && (
         <>
-          <div className="mb-3">
+          <div className="mb-3 d-flex flex-wrap gap-2">
             <Link to="/orders" className="btn btn-mc-outline">My medicine orders</Link>
+            <Link to="/payments" className="btn btn-mc-outline">Payment history</Link>
+            <Link to="/profile" className="btn btn-mc-outline">Profile and address</Link>
           </div>
           <PatientDashboard />
         </>

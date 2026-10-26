@@ -24,21 +24,27 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   const [addr, setAddr] = useState({
-    name: user.name || '', phone: user.phone || '', line: '', city: '', state: '', pincode: '',
+    name: user.name || '',
+    phone: user.phone || '',
+    line: user.address?.line || '',
+    city: user.address?.city || '',
+    state: user.address?.state || '',
+    pincode: user.address?.pincode || '',
   });
   const [method, setMethod] = useState('cod');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [payOrder, setPayOrder] = useState(null);
 
-  // Pichle order ka address dobara use ho jaye
+  // Saved address nahi hai to pichle order ka address use ho
   useEffect(() => {
     apiGet('/orders/mine')
       .then((d) => {
         const last = d.orders[0]?.address;
-        if (last) setAddr(last);
+        if (last && !user.address?.line) setAddr(last);
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const on = (e) => setAddr({ ...addr, [e.target.name]: e.target.value });
@@ -68,7 +74,7 @@ export default function Checkout() {
     setBusy(true);
     try {
       const res = await apiPost('/orders', { address: addr, paymentMethod: method });
-      await refresh(); // cart ab khali hai
+      await refresh();
       if (method === 'online') setPayOrder(res.order);
       else navigate('/orders', { state: { msg: `Order ${res.order.orderNo} placed. Pay cash on delivery.` } });
     } catch (err) {
@@ -92,7 +98,7 @@ export default function Checkout() {
         />
       )}
 
-      <h2 className="mb-3">Checkout</h2>
+      <h2 className="mb-3 text-center">Checkout</h2>
       <div className="row g-4">
         <div className="col-lg-7">
           <div className="mc-card">

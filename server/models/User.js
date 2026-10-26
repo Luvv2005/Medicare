@@ -20,22 +20,27 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     phone: { type: String, trim: true, default: '' },
+    address: {
+      line: { type: String, trim: true, maxlength: 200, default: '' },
+      city: { type: String, trim: true, maxlength: 60, default: '' },
+      state: { type: String, trim: true, maxlength: 60, default: '' },
+      pincode: { type: String, trim: true, default: '' },
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],
       minlength: [8, 'Password must be at least 8 characters'],
-      select: false, // queries mein password default se nahi aayega
+      select: false,
     },
     role: { type: String, enum: ROLES, default: 'patient' },
-    isActive: { type: Boolean, default: true }, // admin account block kar sakega
-    isEmailVerified: { type: Boolean, default: false }, // OTP baad mein
+    isActive: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
     isPhoneVerified: { type: Boolean, default: false },
-    isDemo: { type: Boolean, default: false }, // demo records ki pehchan
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// Save se pehle password hash karo (sirf jab password change hua ho)
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
@@ -45,7 +50,6 @@ userSchema.methods.matchPassword = function (plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-// JSON response mein password kabhi na jaye
 userSchema.set('toJSON', {
   transform: (doc, ret) => {
     delete ret.password;

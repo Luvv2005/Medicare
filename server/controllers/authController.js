@@ -1,13 +1,13 @@
 import User from '../models/User.js';
+import Doctor from '../models/Doctor.js';
 import generateToken from '../utils/generateToken.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^[6-9]\d{9}$/; // 10 digit Indian mobile number
+const phoneRegex = /^[6-9]\d{9}$/;
 
 // POST /api/auth/register
 export const register = asyncHandler(async (req, res) => {
-  // Sirf ye 4 fields lete hain. role body se KABHI nahi lete.
   const { name, email, phone, password } = req.body;
 
   if (!name || !email || !password) {
@@ -43,10 +43,8 @@ export const login = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  // select('+password') kyunki model mein password hidden hai
   const user = await User.findOne({ email: String(email).toLowerCase() }).select('+password');
 
-  // Same message dono cases mein, taaki attacker ko pata na chale email exist karta hai ya nahi
   if (!user || !(await user.matchPassword(password))) {
     return res.status(401).json({ message: 'Invalid email or password' });
   }
@@ -57,7 +55,49 @@ export const login = asyncHandler(async (req, res) => {
   res.json({ user, token: generateToken(user) });
 });
 
-// GET /api/auth/me  (login zaroori)
+// GET /api/auth/me
 export const getMe = asyncHandler(async (req, res) => {
   res.json({ user: req.user });
+});
+
+// PUT /api/auth/profile   body: { name, phone, address }
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, address } = req.body;
+  const update = {};
+
+  if (name !== undefined) {
+    const n = String(name).trim();
+    if (n.length < 2 || n.length > 60)
+      return res.status(400).json({ message: 'Name must be 2 to 60 characters' });
+    update.name = n;
+  }
+
+  if (phone !== undefined) {
+    const p = String(phone).trim();
+    if (p && !phoneRegex.test(p))
+      return res.status(400).json({ message: 'Please enter a valid 10-digit phone number' });
+    update.phone = p;
+    if (p !== req.user.phone) update.isPhoneVerified = false;
+  }
+
+  if (address !== undefined) {
+    const a = address || {};
+    const clean = {
+      line: String(a.line || '').trim().slice(0, 200),
+      city: String(a.city || '').trim().slice(0, 60),
+      state: String(a.state || '').trim().slice(0, 60),
+      pincode: String(a.pincode || '').trim(),
+    };
+    if (clean.pincode && !/^\d{6}$/.test(clean.pincode))
+      return res.status(400).json({ message: 'Pincode must be 6 digits' });
+    update.address = clean;
+  }
+
+  const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true });
+
+  if (req.user.role === 'doctor' && update.name) {
+    await Doctor.updateOne({ user: req.user._id }, { name: update.name });
+  }
+
+  res.json({ user });
 });

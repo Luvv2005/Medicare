@@ -15,6 +15,7 @@ import {
   updateOrderStatus,
 } from '../controllers/adminStoreController.js';
 import { listRefunds, simulateFailure, retryRefund } from '../controllers/adminRefundController.js';
+import { listAppointments, setUserActive, getStats } from '../controllers/adminReportController.js';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ const router = Router();
 router.use(protect, authorize('admin'));
 
 router.get('/users', listUsers);
+router.patch('/users/:id/active', setUserActive);
 router.get('/doctors', listDoctors);
 router.patch('/doctors/:id/approve', approveDoctor);
 router.patch('/doctors/:id/reject', rejectDoctor);
@@ -32,8 +34,12 @@ router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
 router.get('/orders', listOrders);
 router.patch('/orders/:id/status', updateOrderStatus);
+
 router.get('/refunds', listRefunds);
 router.post('/refunds/:id/simulate-failure', simulateFailure);
 router.post('/refunds/:id/retry', retryRefund);
+
+router.get('/appointments', listAppointments);
+router.get('/stats', getStats);
 
 export default router;
