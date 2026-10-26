@@ -10,6 +10,7 @@ import Appointment from '../models/Appointment.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import { demoProducts } from '../data/demoProducts.js';
+import Refund from '../models/Refund.js';
 
 const removeOnly = process.argv.includes('--remove');
 
@@ -80,10 +81,30 @@ const demoDoctors = [
 //   );
 // };
 
+// const removeDemo = async () => {
+//   // SIRF demo records. Real doctors/users/products/orders ko nahi chhuta.
+//   const demoDocs = await Doctor.find({ isDemo: true }).select('_id');
+//   const docIds = demoDocs.map((d) => d._id);
+
+//   const a = await Appointment.deleteMany({ doctor: { $in: docIds } });
+//   const av = await Availability.deleteMany({ doctor: { $in: docIds } });
+//   const d = await Doctor.deleteMany({ isDemo: true });
+//   const u = await User.deleteMany({ isDemo: true });
+//   const p = await Product.deleteMany({ isDemo: true });
+//   const o = await Order.deleteMany({ isDemo: true });
+//   console.log(
+//     `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}, demo products: ${p.deletedCount}, demo orders: ${o.deletedCount}`
+//   );
+// };
+
 const removeDemo = async () => {
   // SIRF demo records. Real doctors/users/products/orders ko nahi chhuta.
   const demoDocs = await Doctor.find({ isDemo: true }).select('_id');
   const docIds = demoDocs.map((d) => d._id);
+
+  const apptIds = (await Appointment.find({ doctor: { $in: docIds } }).select('_id')).map((a) => a._id);
+  const orderIds = (await Order.find({ isDemo: true }).select('_id')).map((o) => o._id);
+  const rf = await Refund.deleteMany({ sourceId: { $in: [...apptIds, ...orderIds] } });
 
   const a = await Appointment.deleteMany({ doctor: { $in: docIds } });
   const av = await Availability.deleteMany({ doctor: { $in: docIds } });
@@ -92,7 +113,7 @@ const removeDemo = async () => {
   const p = await Product.deleteMany({ isDemo: true });
   const o = await Order.deleteMany({ isDemo: true });
   console.log(
-    `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}, demo products: ${p.deletedCount}, demo orders: ${o.deletedCount}`
+    `Removed demo doctors: ${d.deletedCount}, demo users: ${u.deletedCount}, availability: ${av.deletedCount}, demo-doctor appointments: ${a.deletedCount}, demo products: ${p.deletedCount}, demo orders: ${o.deletedCount}, refunds: ${rf.deletedCount}`
   );
 };
 

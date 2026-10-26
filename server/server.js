@@ -16,6 +16,8 @@ import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import { releaseExpiredOrders } from './utils/stock.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import { settleMockRefunds } from './utils/refunds.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is missing in .env');
@@ -45,6 +47,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -72,4 +75,12 @@ connectDB().then(() => {
   console.log(`Payment mode: ${paymentMode()}`);
   sweepExpiredHolds();
   setInterval(sweepExpiredHolds, 60 * 1000);
+    setInterval(async () => {
+    try {
+      const n = await settleMockRefunds();
+      if (n) console.log(`Settled ${n} test refund(s)`);
+    } catch (err) {
+      console.error('Refund sweep failed:', err.message);
+    }
+  }, 15 * 1000);
 });

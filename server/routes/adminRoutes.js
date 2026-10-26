@@ -14,6 +14,7 @@ import {
   listOrders,
   updateOrderStatus,
 } from '../controllers/adminStoreController.js';
+import { listRefunds, simulateFailure, retryRefund } from '../controllers/adminRefundController.js';
 
 const router = Router();
 
@@ -31,5 +32,8 @@ router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
 router.get('/orders', listOrders);
 router.patch('/orders/:id/status', updateOrderStatus);
+router.get('/refunds', listRefunds);
+router.post('/refunds/:id/simulate-failure', simulateFailure);
+router.post('/refunds/:id/retry', retryRefund);
 
 export default router;

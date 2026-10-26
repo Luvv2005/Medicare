@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema(
       enum: ['none', 'pending', 'initiated', 'processed', 'failed'],
       default: 'none',
     },
-
+    refundAmount: { type: Number, default: 0 },
     holdExpiresAt: { type: Date },
     payment: {
       provider: String,

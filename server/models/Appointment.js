@@ -35,6 +35,7 @@ const appointmentSchema = new mongoose.Schema(
       enum: ['none', 'pending', 'initiated', 'processed', 'failed'],
       default: 'none',
     },
+    refundAmount: { type: Number, default: 0 },
 
     patientName: { type: String, required: true, trim: true },
     patientPhone: { type: String, required: true, trim: true },

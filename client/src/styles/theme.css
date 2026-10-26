@@ -585,3 +585,44 @@ body {
 }
 .mc-qty button:disabled { opacity: 0.4; }
 .mc-qty span { min-width: 40px; text-align: center; font-weight: 600; }
+
+/* ---------- Notifications ---------- */
+.mc-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+.mc-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e5534b;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.mc-notif {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.6rem;
+  padding: 0.8rem 1rem;
+  background: var(--mc-surface);
+  color: var(--mc-text);
+  border: 1px solid var(--mc-border);
+  border-left: 4px solid transparent;
+  border-radius: 10px;
+}
+.mc-notif--unread {
+  border-left-color: var(--mc-primary);
+  background: var(--mc-surface-2);
+}

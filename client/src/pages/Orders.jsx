@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { apiGet, apiPatch } from '../services/api';
 import OrderPayModal from '../components/OrderPayModal';
 import { effOrderStatus, ORDER_LABEL, ORDER_CHIP, orderPayLabel, money } from '../utils/orderUi';
+import { refundLabel } from '../utils/appointmentUi';
 
 export default function Orders() {
   const location = useLocation();
@@ -27,7 +28,8 @@ export default function Orders() {
   useEffect(() => { load(); }, [load]);
 
   const cancel = async (o) => {
-    if (!window.confirm('Cancel this order?')) return;
+    const paidNote = o.paymentStatus === 'paid' ? ` A full refund of ${money(o.total)} will be initiated.` : '';
+    if (!window.confirm(`Cancel this order?${paidNote}`)) return;
     setMsg('');
     setBusyId(o._id);
     try {
@@ -66,7 +68,7 @@ export default function Orders() {
       {orders.map((o) => {
         const eff = effOrderStatus(o);
         const canPay = eff === 'pending_payment';
-        const canCancel = ['pending_payment', 'placed', 'confirmed'].includes(eff) && o.paymentStatus !== 'paid';
+        const canCancel = ['pending_payment', 'placed', 'confirmed'].includes(eff);
         return (
           <div className="mc-card mb-3" key={o._id}>
             <div className="d-flex flex-wrap justify-content-between gap-2">
@@ -103,10 +105,16 @@ export default function Orders() {
                   Cancel order
                 </button>
               )}
-              {o.paymentStatus === 'paid' && ['placed', 'confirmed'].includes(eff) && (
-                <span className="mc-muted small">Cancellation with refund arrives in Step 9.</span>
-              )}
             </div>
+
+            {o.refundStatus !== 'none' && (
+              <div className="small mt-2">
+                <span className="mc-chip mc-chip--demo">{refundLabel(o.refundStatus)}</span>{' '}
+                {money(o.refundAmount)} refund.{' '}
+                <span className="mc-muted">Actual time to reach you depends on your bank or payment provider.    
+                </span>
+              </div>
+            )}
           </div>
         );
       })}

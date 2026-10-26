@@ -58,5 +58,10 @@ export function generateSlots(availability, date, mode) {
       out.push({ startTime: toTime(t), endTime: toTime(t + availability.slotMinutes), modes });
     }
   }
-  return out.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const blocked = (availability.blocked || []).filter((b) => b.date === date);
+  return out
+    .filter(
+      (s) => !blocked.some((b) => toMin(s.startTime) >= toMin(b.from) && toMin(s.startTime) < toMin(b.to))
+    )
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }

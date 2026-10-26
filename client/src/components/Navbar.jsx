@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import NotificationBell from './NotificationBell';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -63,6 +64,7 @@ export default function Navbar() {
           </ul>
 
           <div className="d-flex align-items-center gap-2 py-2 py-lg-0 flex-wrap">
+          {user && <NotificationBell />}
             <button
               className="mc-toggler"
               onClick={toggleTheme}

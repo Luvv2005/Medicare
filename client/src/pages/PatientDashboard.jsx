@@ -5,6 +5,77 @@ import PayModal from '../components/PayModal';
 import { formatDate, formatTime, istToday } from '../utils/dates';
 import { effStatus, STATUS_CHIP, statusLabel, payLabel, refundLabel } from '../utils/appointmentUi';
 
+function AppointmentCard({ a, busy, onPay, onCancel }) {
+  const active = ['held', 'confirmed'].includes(a.eff);
+
+  return (
+    <div className="mc-appt">
+      <div className="d-flex flex-wrap justify-content-between gap-2">
+        <div>
+          <strong>{a.doctor?.name || 'Doctor'}</strong>
+          <div className="mc-muted small">{a.doctor?.specialization}</div>
+          <div>
+            {formatDate(a.date)} · {formatTime(a.startTime)}
+            <span className="mc-muted text-capitalize"> · {a.mode}</span>
+          </div>
+          {a.mode === 'in-person' && a.doctor?.clinic && (
+            <div className="mc-muted small">{a.doctor.clinic.name}, {a.doctor.clinic.city}</div>
+          )}
+        </div>
+        <div className="d-flex flex-wrap gap-1 align-items-start">
+          <span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span>
+          <span className="mc-chip">{payLabel(a.paymentStatus)} · ₹{a.amount}</span>
+          {a.isDemo && <span className="mc-chip mc-chip--demo">DEMO</span>}
+        </div>
+      </div>
+
+      {a.eff === 'cancelled' && a.cancelledBy === 'doctor' && (
+        <div className="small mt-2">
+          <strong>Cancelled by doctor.</strong> Reason: {a.cancelReason}
+          <div className="mt-1 d-flex flex-wrap gap-2">
+            {a.doctor?._id && (
+              <Link to={`/doctors/${a.doctor._id}`} className="btn btn-mc-primary btn-mc-sm">
+                Book another slot
+              </Link>
+            )}
+            {a.doctor?.specialization && (
+              <Link
+                to={`/find-doctor?specialization=${encodeURIComponent(a.doctor.specialization)}`}
+                className="btn btn-mc-outline btn-mc-sm"
+              >
+                Find another {a.doctor.specialization}
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {a.eff === 'cancelled' && a.paymentStatus === 'paid' && a.refundStatus === 'none' && (
+        <div className="small mc-muted mt-2">No refund applied as per the cancellation policy.</div>
+      )}
+
+      {a.refundStatus !== 'none' && (
+        <div className="small mt-2">
+          <span className="mc-chip mc-chip--demo">{refundLabel(a.refundStatus)}</span>{' '}
+          ₹{a.refundAmount} refund.{' '}
+          <span className="mc-muted">Actual time to reach you depends on your bank or payment provider.</span>
+        </div>
+      )}
+
+      <div className="d-flex flex-wrap gap-2 mt-2">
+        {a.eff === 'held' && (
+          <button className="btn btn-mc-primary btn-mc-sm" onClick={() => onPay(a)}>Pay now</button>
+        )}
+        {active && (
+          <button className="btn btn-mc-outline btn-mc-sm" onClick={() => onCancel(a)} disabled={busy}>
+            Cancel
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PatientDashboard() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,12 +98,14 @@ export default function PatientDashboard() {
   useEffect(() => { load(); }, [load]);
 
   const cancel = async (a) => {
-    if (!window.confirm('Cancel this appointment?')) return;
     setMsg('');
     setBusyId(a._id);
     try {
-      await apiPatch(`/appointments/${a._id}/cancel`, { reason: 'Cancelled by patient' });
-      setMsg('Appointment cancelled.');
+      // Pehle batao ki kitna refund milega, phir confirm
+      const p = await apiGet(`/appointments/${a._id}/cancel-preview`);
+      if (!window.confirm(`${p.message}\n\nCancel this appointment?`)) return;
+      const r = await apiPatch(`/appointments/${a._id}/cancel`, { reason: 'Cancelled by patient' });
+      setMsg(r.message);
     } catch (err) {
       setMsg(err.message);
     } finally {
@@ -45,46 +118,6 @@ export default function PatientDashboard() {
   const items = list.map((a) => ({ ...a, eff: effStatus(a) }));
   const upcoming = items.filter((a) => ['held', 'confirmed'].includes(a.eff) && a.date >= today);
   const history = items.filter((a) => !upcoming.includes(a));
-
-  const Card = ({ a }) => (
-    <div className="mc-appt">
-      <div className="d-flex flex-wrap justify-content-between gap-2">
-        <div>
-          <strong>{a.doctor?.name || 'Doctor'}</strong>
-          <div className="mc-muted small">{a.doctor?.specialization}</div>
-          <div>
-            {formatDate(a.date)} · {formatTime(a.startTime)}
-            <span className="mc-muted text-capitalize"> · {a.mode}</span>
-          </div>
-          {a.mode === 'in-person' && a.doctor?.clinic && (
-            <div className="mc-muted small">{a.doctor.clinic.name}, {a.doctor.clinic.city}</div>
-          )}
-        </div>
-        <div className="d-flex flex-wrap gap-1 align-items-start">
-          <span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span>
-          <span className="mc-chip">{payLabel(a.paymentStatus)} · ₹{a.amount}</span>
-          {a.refundStatus !== 'none' && <span className="mc-chip mc-chip--demo">{refundLabel(a.refundStatus)}</span>}
-          {a.isDemo && <span className="mc-chip mc-chip--demo">DEMO</span>}
-        </div>
-      </div>
-
-      <div className="d-flex flex-wrap gap-2 mt-2">
-        {a.eff === 'held' && (
-          <button className="btn btn-mc-primary btn-mc-sm" onClick={() => setPayAppt(a)}>
-            Pay now
-          </button>
-        )}
-        {['held', 'confirmed'].includes(a.eff) && a.paymentStatus !== 'paid' && (
-          <button className="btn btn-mc-outline btn-mc-sm" onClick={() => cancel(a)} disabled={busyId === a._id}>
-            Cancel
-          </button>
-        )}
-        {a.eff === 'confirmed' && a.paymentStatus === 'paid' && (
-          <span className="mc-muted small">Cancellation with refund arrives in Step 9.</span>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="mc-card">
@@ -110,10 +143,14 @@ export default function PatientDashboard() {
       )}
 
       {upcoming.length > 0 && <h6 className="mt-3">Upcoming</h6>}
-      {upcoming.map((a) => <Card key={a._id} a={a} />)}
+      {upcoming.map((a) => (
+        <AppointmentCard key={a._id} a={a} busy={busyId === a._id} onPay={setPayAppt} onCancel={cancel} />
+      ))}
 
       {history.length > 0 && <h6 className="mt-4">History</h6>}
-      {history.map((a) => <Card key={a._id} a={a} />)}
+      {history.map((a) => (
+        <AppointmentCard key={a._id} a={a} busy={busyId === a._id} onPay={setPayAppt} onCancel={cancel} />
+      ))}
     </div>
   );
 }

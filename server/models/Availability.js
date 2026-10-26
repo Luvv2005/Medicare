@@ -16,6 +16,10 @@ const availabilitySchema = new mongoose.Schema(
     slotMinutes: { type: Number, default: 15 },
     sessions: [sessionSchema],
     daysOff: [{ type: String }], // "2026-11-05" jaisi chhutti ki dates
+
+    // Doctor ne kisi din ka session cancel kiya to wo hissa yahan band ho jata hai
+    blocked: [{ _id: false, date: String, from: String, to: String }],
+
     isDemo: { type: Boolean, default: false },
   },
   { timestamps: true }

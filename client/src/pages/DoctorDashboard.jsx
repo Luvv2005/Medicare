@@ -1,8 +1,74 @@
-import { useEffect, useState } from 'react';
-import { apiGet } from '../services/api';
+import { useCallback, useEffect, useState } from 'react';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 import AvailabilityEditor from '../components/AvailabilityEditor';
 import { formatDate, formatTime, istToday } from '../utils/dates';
-import { effStatus, STATUS_CHIP, statusLabel, payLabel } from '../utils/appointmentUi';
+import { effStatus, STATUS_CHIP, statusLabel, payLabel, refundLabel } from '../utils/appointmentUi';
+
+function SessionCancel({ onDone }) {
+  const [date, setDate] = useState('');
+  const [part, setPart] = useState('day');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [msg, setMsg] = useState('');
+
+  const submit = async () => {
+    setError('');
+    setMsg('');
+    if (!date) return setError('Choose a date');
+    if (reason.trim().length < 5) return setError('Please give a reason (min 5 characters)');
+    if (!window.confirm('Cancel this session? All booked patients will be notified and online payments refunded.')) return;
+
+    setBusy(true);
+    try {
+      const r = await apiPost('/appointments/doctor/cancel-session', { date, part, reason: reason.trim() });
+      setMsg(r.message);
+      setReason('');
+      onDone();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mc-card mb-3">
+      <h5>Cancel a session</h5>
+      <p className="mc-muted small">
+        Cancels every booking in that time, notifies each patient, refunds online payments, and stops new
+        bookings for it.
+      </p>
+      {error && <div className="alert alert-danger py-2">{error}</div>}
+      {msg && <div className="alert alert-success py-2">{msg}</div>}
+      <div className="row g-2 align-items-end">
+        <div className="col-6 col-md-3">
+          <label className="form-label small mb-1">Date</label>
+          <input type="date" className="form-control" min={istToday()} value={date}
+            onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="col-6 col-md-3">
+          <label className="form-label small mb-1">Session</label>
+          <select className="form-select" value={part} onChange={(e) => setPart(e.target.value)}>
+            <option value="day">Whole day</option>
+            <option value="morning">Morning (before 1 PM)</option>
+            <option value="evening">Evening (1 PM onwards)</option>
+          </select>
+        </div>
+        <div className="col-12 col-md-4">
+          <label className="form-label small mb-1">Reason</label>
+          <input className="form-control" value={reason} maxLength={300}
+            onChange={(e) => setReason(e.target.value)} placeholder="e.g. Emergency surgery" />
+        </div>
+        <div className="col-12 col-md-2">
+          <button className="btn btn-mc-outline w-100" onClick={submit} disabled={busy}>
+            {busy ? 'Cancelling...' : 'Cancel session'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DoctorDashboard() {
   const [tab, setTab] = useState('appointments');
@@ -10,16 +76,40 @@ export default function DoctorDashboard() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionMsg, setActionMsg] = useState('');
+  const [busyId, setBusyId] = useState('');
 
-  useEffect(() => {
-    Promise.all([apiGet('/doctors/me/profile'), apiGet('/appointments/doctor')])
-      .then(([p, a]) => {
-        setProfile(p.doctor);
-        setList(a.appointments);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    try {
+      const [p, a] = await Promise.all([apiGet('/doctors/me/profile'), apiGet('/appointments/doctor')]);
+      setProfile(p.doctor);
+      setList(a.appointments);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const cancelAppt = async (a) => {
+    const reason = window.prompt(
+      `Cancel ${a.patientName}'s appointment on ${formatDate(a.date)} at ${formatTime(a.startTime)}?\n\nEnter a reason (min 5 characters):`
+    );
+    if (reason === null) return;
+    setActionMsg('');
+    setBusyId(a._id);
+    try {
+      const r = await apiPatch(`/appointments/${a._id}/doctor-cancel`, { reason });
+      setActionMsg(r.message);
+    } catch (err) {
+      setActionMsg(err.message);
+    } finally {
+      setBusyId('');
+      load();
+    }
+  };
 
   const today = istToday();
   const items = list.map((a) => ({ ...a, eff: effStatus(a) })).filter((a) => a.eff !== 'expired');
@@ -68,36 +158,54 @@ export default function DoctorDashboard() {
       {tab === 'availability' && <AvailabilityEditor />}
 
       {tab === 'appointments' && (
-        <div className="mc-card">
-          <h5>Patient appointments</h5>
-          {items.length === 0 ? (
-            <p className="mc-muted mb-0">No appointments yet.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Date</th><th>Time</th><th>Patient</th><th>Phone</th>
-                    <th>Mode</th><th>Status</th><th>Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((a) => (
-                    <tr key={a._id}>
-                      <td>{formatDate(a.date)}</td>
-                      <td>{formatTime(a.startTime)}</td>
-                      <td>{a.patientName}</td>
-                      <td>{a.patientPhone}</td>
-                      <td className="text-capitalize">{a.mode}</td>
-                      <td><span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span></td>
-                      <td>{payLabel(a.paymentStatus)}</td>
+        <>
+          <SessionCancel onDone={load} />
+
+          <div className="mc-card">
+            <h5>Patient appointments</h5>
+            {actionMsg && <div className="alert alert-info py-2">{actionMsg}</div>}
+            {items.length === 0 ? (
+              <p className="mc-muted mb-0">No appointments yet.</p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Date</th><th>Time</th><th>Patient</th><th>Phone</th>
+                      <th>Mode</th><th>Status</th><th>Payment</th><th />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {items.map((a) => (
+                      <tr key={a._id}>
+                        <td>{formatDate(a.date)}</td>
+                        <td>{formatTime(a.startTime)}</td>
+                        <td>{a.patientName}</td>
+                        <td>{a.patientPhone}</td>
+                        <td className="text-capitalize">{a.mode}</td>
+                        <td><span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span></td>
+                        <td>
+                          {payLabel(a.paymentStatus)}
+                          {a.refundStatus !== 'none' && (
+                            <div className="small mc-muted">{refundLabel(a.refundStatus)}</div>
+                          )}
+                        </td>
+                        <td className="text-nowrap">
+                          {['held', 'confirmed'].includes(a.eff) && a.date >= today && (
+                            <button className="btn btn-mc-outline btn-mc-sm" disabled={busyId === a._id}
+                              onClick={() => cancelAppt(a)}>
+                              Cancel
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </>
   );

@@ -3,6 +3,7 @@ import Appointment from '../models/Appointment.js';
 import Payment from '../models/Paymenttemp.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { paymentMode } from '../config/payment.js';
+import { notifyBooking } from '../utils/notify.js';
 
 // GET /api/payments/config  (login zaroori nahi)
 export const getConfig = (req, res) => {
@@ -81,6 +82,6 @@ export const mockConfirm = asyncHandler(async (req, res) => {
     paidAt: new Date(),
     isSimulated: true,
   });
-
+  await notifyBooking(confirmed);
   res.json({ message: 'Test payment successful. Appointment confirmed.', appointment: confirmed });
 });

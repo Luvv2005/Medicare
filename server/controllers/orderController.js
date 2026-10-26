@@ -5,6 +5,8 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { STORE, calcTotals } from '../config/store.js';
 import { paymentMode } from '../config/payment.js';
 import { reserveStock, restoreStock } from '../utils/stock.js';
+import { ORDER_REFUND_PERCENT } from '../config/policy.js';
+import { startRefund } from '../utils/refunds.js';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^\d{6}$/;
@@ -149,6 +151,29 @@ export const mockPayOrder = asyncHandler(async (req, res) => {
   res.json({ message: 'Test payment successful. Order placed.', order: paid });
 });
 
+// // PATCH /api/orders/:id/cancel
+// export const cancelOrder = asyncHandler(async (req, res) => {
+//   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Order not found' });
+
+//   const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+//   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+//   if (!['pending_payment', 'placed', 'confirmed'].includes(order.status))
+//     return res.status(400).json({ message: `Cannot cancel an order that is ${order.status}` });
+//   if (order.paymentStatus === 'paid')
+//     return res.status(400).json({ message: 'Paid orders can be cancelled with refund only after Step 9 is built' });
+
+//   const updated = await Order.findOneAndUpdate(
+//     { _id: order._id, user: req.user._id, status: order.status, paymentStatus: { $ne: 'paid' } },
+//     { status: 'cancelled', cancelledBy: 'patient', cancelledAt: new Date(), $unset: { holdExpiresAt: 1 } },
+//     { new: true }
+//   );
+//   if (!updated) return res.status(409).json({ message: 'Order was just updated. Please refresh.' });
+
+//   await restoreStock(updated.items); // sirf tab jab cancel sach mein hua
+//   res.json({ message: 'Order cancelled.', order: updated });
+// });
+
 // PATCH /api/orders/:id/cancel
 export const cancelOrder = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Order not found' });
@@ -158,16 +183,31 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 
   if (!['pending_payment', 'placed', 'confirmed'].includes(order.status))
     return res.status(400).json({ message: `Cannot cancel an order that is ${order.status}` });
-  if (order.paymentStatus === 'paid')
-    return res.status(400).json({ message: 'Paid orders can be cancelled with refund only after Step 9 is built' });
+
+  const wasPaid = order.paymentStatus === 'paid';
 
   const updated = await Order.findOneAndUpdate(
-    { _id: order._id, user: req.user._id, status: order.status, paymentStatus: { $ne: 'paid' } },
+    { _id: order._id, user: req.user._id, status: order.status },
     { status: 'cancelled', cancelledBy: 'patient', cancelledAt: new Date(), $unset: { holdExpiresAt: 1 } },
     { new: true }
   );
   if (!updated) return res.status(409).json({ message: 'Order was just updated. Please refresh.' });
 
   await restoreStock(updated.items); // sirf tab jab cancel sach mein hua
-  res.json({ message: 'Order cancelled.', order: updated });
+
+  let refund = null;
+  if (wasPaid) {
+    refund = await startRefund({
+      sourceType: 'order',
+      source: updated,
+      amount: Math.round((updated.total * ORDER_REFUND_PERCENT) / 100),
+      reason: 'Order cancelled by patient',
+      providerPaymentId: updated.payment?.providerPaymentId,
+    });
+  }
+
+  res.json({
+    message: refund ? `Order cancelled. A refund of ₹${refund.amount} has been initiated.` : 'Order cancelled.',
+    order: await Order.findById(updated._id),
+  });
 });

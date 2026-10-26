@@ -6,6 +6,9 @@ import escapeRegex from '../utils/escapeRegex.js';
 import { logAudit } from '../utils/audit.js';
 import { restoreStock } from '../utils/stock.js';
 import { CATEGORY_SLUGS } from '../utils/productCategories.js';
+import { notify } from '../utils/notify.js';
+import { startRefund } from '../utils/refunds.js';
+import { ORDER_REFUND_PERCENT } from '../config/policy.js';
 
 // Body se sirf safe fields. isDemo kabhi body se nahi aata.
 const cleanProduct = (b, isUpdate = false) => {
@@ -97,29 +100,88 @@ const NEXT = {
 
 // PATCH /api/admin/orders/:id/status   body: { status }
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Order not found' });
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
   const { status } = req.body;
 
   const order = await Order.findById(req.params.id);
-  if (!order) return res.status(404).json({ message: 'Order not found' });
 
-  if (!(NEXT[order.status] || []).includes(status))
-    return res.status(400).json({ message: `Cannot change order from ${order.status} to ${status}` });
-  if (status === 'cancelled' && order.paymentStatus === 'paid')
-    return res.status(400).json({ message: 'Paid orders need a refund. Refund workflow arrives in Step 9.' });
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  if (!(NEXT[order.status] || []).includes(status)) {
+    return res.status(400).json({
+      message: `Cannot change order from ${order.status} to ${status}`,
+    });
+  }
 
   const update = { status };
-  if (status === 'delivered' && order.paymentMethod === 'cod') update.paymentStatus = 'paid';
+
+  if (status === 'delivered' && order.paymentMethod === 'cod') {
+    update.paymentStatus = 'paid';
+  }
+
   if (status === 'cancelled') {
     update.cancelledBy = 'admin';
     update.cancelledAt = new Date();
   }
 
-  const updated = await Order.findOneAndUpdate({ _id: order._id, status: order.status }, update, { new: true });
-  if (!updated) return res.status(409).json({ message: 'Order was just changed. Please refresh.' });
+  const updated = await Order.findOneAndUpdate(
+    { _id: order._id, status: order.status },
+    update,
+    { new: true }
+  );
 
-  if (status === 'cancelled') await restoreStock(updated.items);
-  await logAudit(req, 'ORDER_STATUS_CHANGED', 'Order', updated._id, { from: order.status, to: status });
+  if (!updated) {
+    return res.status(409).json({
+      message: 'Order was just changed. Please refresh.',
+    });
+  }
 
-  res.json({ order: updated });
+  let refund = null;
+
+  if (status === 'cancelled') {
+    await restoreStock(updated.items);
+
+    if (order.paymentStatus === 'paid') {
+      refund = await startRefund({
+        sourceType: 'order',
+        source: updated,
+        amount: Math.round(
+          (updated.total * ORDER_REFUND_PERCENT) / 100
+        ),
+        reason: 'Order cancelled by admin',
+        providerPaymentId: updated.payment?.providerPaymentId,
+      });
+    }
+  }
+
+  await logAudit(
+    req,
+    'ORDER_STATUS_CHANGED',
+    'Order',
+    updated._id,
+    {
+      from: order.status,
+      to: status,
+    }
+  );
+
+  await notify(updated.user, {
+    type: 'order',
+    title: `Order ${updated.orderNo} ${status}`,
+    message: `Your order ${updated.orderNo} is now ${status}.${
+      refund
+        ? ` A refund of ₹${refund.amount} has been initiated.`
+        : ''
+    }`,
+    link: '/orders',
+  });
+
+  res.json({
+    order: await Order.findById(updated._id),
+  });
 });

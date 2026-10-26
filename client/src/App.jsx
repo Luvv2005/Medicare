@@ -16,6 +16,7 @@ import DoctorRegister from './pages/DoctorRegister';
 import ProductDetail from './pages/ProductDetail';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
+import Notifications from './pages/Notifications';
 
 export default function App() {
   return (
@@ -51,6 +52,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/medicines/:id" element={<ProductDetail />} 
           />
           <Route
@@ -69,7 +78,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Sirf admin */}
           <Route
             path="/admin"
