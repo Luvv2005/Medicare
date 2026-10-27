@@ -8,12 +8,14 @@ import {
   HOLD_MINUTES, isValidDate, checkWindow, generateSlots, slotInstant, istToday,
 } from '../utils/slots.js';
 import { refundPercentFor } from '../config/policy.js';
+import { RESCHEDULE_MIN_HOURS, MAX_RESCHEDULES } from '../config/queue.js';
 import { startRefund } from '../utils/refunds.js';
 import { notify, notifyBooking } from '../utils/notify.js';
+import { sessionOf, afterQueueChange } from '../utils/queue.js';
+import { offerFreedSlot } from '../utils/waitlist.js';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 
-// Ye appointments slot gher rahe hain (confirmed, ya abhi tak na-expire hua hold)
 const blockingFilter = (now) => ({
   isActive: true,
   $or: [{ status: 'confirmed' }, { status: 'held', holdExpiresAt: { $gt: now } }],
@@ -98,7 +100,6 @@ export const bookAppointment = asyncHandler(async (req, res) => {
   if (slotInstant(date, startTime) <= now)
     return res.status(400).json({ message: 'This slot time has already passed' });
 
-  // Purane expire ho chuke holds ko hatao taaki slot free ho jaye
   await Appointment.updateMany(
     { doctor: doctor._id, date, startTime, isActive: true, status: 'held', holdExpiresAt: { $lte: now } },
     { status: 'expired', isActive: false }
@@ -120,6 +121,7 @@ export const bookAppointment = asyncHandler(async (req, res) => {
       date,
       startTime,
       endTime: slot.endTime,
+      session: sessionOf(startTime),
       mode,
       paymentMethod,
       amount: doctor.consultationFee,
@@ -172,7 +174,6 @@ export const doctorAppointments = asyncHandler(async (req, res) => {
 
 // ---------- Cancellation ----------
 
-// Cancel ho sakti hai ya nahi: error message ya null
 const cancelBlocker = (appt) => {
   if (!['held', 'confirmed'].includes(appt.status))
     return `Cannot cancel an appointment that is ${appt.status}`;
@@ -181,7 +182,6 @@ const cancelBlocker = (appt) => {
   return null;
 };
 
-// Patient ke cancel par kitna refund milega
 const refundInfo = (appt) => {
   if (appt.paymentStatus !== 'paid')
     return { percent: 0, amount: 0, message: 'No online payment was made, so no refund is needed.' };
@@ -196,13 +196,13 @@ const refundInfo = (appt) => {
   return { percent, amount, message };
 };
 
-// Slot free karta hai aur zaroorat ho to refund shuru karta hai. Patient aur doctor dono yahi use karte hain.
 const cancelAndRefund = async (appt, { by, reason, percent }) => {
   const cancelled = await Appointment.findOneAndUpdate(
     { _id: appt._id, isActive: true, status: { $in: ['held', 'confirmed'] } },
     {
       status: 'cancelled',
-      isActive: false, // slot free
+      isActive: false,
+      queueStatus: 'none', // check-in ho chuka ho to queue se bhi hato
       cancelledBy: by,
       cancelReason: reason,
       cancelledAt: new Date(),
@@ -210,7 +210,7 @@ const cancelAndRefund = async (appt, { by, reason, percent }) => {
     },
     { new: true }
   );
-  if (!cancelled) return null; // kisi aur ne pehle hi badal diya
+  if (!cancelled) return null;
 
   let refund = null;
   if (cancelled.paymentStatus === 'paid' && percent > 0) {
@@ -229,7 +229,7 @@ const cancelAndRefund = async (appt, { by, reason, percent }) => {
 const findMine = (id, userId) =>
   mongoose.isValidObjectId(id) ? Appointment.findOne({ _id: id, patient: userId }) : null;
 
-// GET /api/appointments/:id/cancel-preview   (patient, sirf apni)
+// GET /api/appointments/:id/cancel-preview
 export const cancelPreview = asyncHandler(async (req, res) => {
   const appt = await findMine(req.params.id, req.user._id);
   if (!appt) return res.status(404).json({ message: 'Appointment not found' });
@@ -272,10 +272,126 @@ export const cancelAppointment = asyncHandler(async (req, res) => {
     });
   }
 
+  if (appt.queueStatus !== 'none') {
+    await afterQueueChange({
+      doctorId: appt.doctor,
+      date: appt.date,
+      session: appt.session || sessionOf(appt.startTime),
+      extraUserIds: [appt.patient],
+    });
+  }
+
+  // Slot khali hua: waiting list ke patient ko offer
+  await offerFreedSlot({
+    doctorId: appt.doctor, date: appt.date, startTime: appt.startTime, mode: appt.mode,
+  }).catch((err) => console.error('Waitlist offer failed:', err.message));
+
   res.json({ message: `Appointment cancelled. ${info.message}`, appointment: out.appointment });
 });
 
-// Patient ko batao ki doctor ne cancel kiya, aur dobara book karne ka rasta
+// PATCH /api/appointments/:id/reschedule   body: { date, startTime }   (patient, sirf apni)
+export const rescheduleAppointment = asyncHandler(async (req, res) => {
+  const { date, startTime } = req.body;
+  const appt = await findMine(req.params.id, req.user._id);
+  if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+
+  if (appt.status !== 'confirmed' || !appt.isActive)
+    return res.status(400).json({
+      message: 'Only confirmed appointments can be rescheduled. Complete the payment first if it is pending.',
+    });
+  if (appt.queueStatus !== 'none')
+    return res.status(400).json({ message: 'You have already checked in, so this cannot be rescheduled' });
+  if ((appt.rescheduleCount || 0) >= MAX_RESCHEDULES)
+    return res.status(400).json({ message: `An appointment can be rescheduled at most ${MAX_RESCHEDULES} times` });
+
+  const now = new Date();
+  const hoursBefore = (slotInstant(appt.date, appt.startTime).getTime() - now.getTime()) / 3600000;
+  if (hoursBefore < RESCHEDULE_MIN_HOURS)
+    return res.status(400).json({
+      message: `Rescheduling is allowed only ${RESCHEDULE_MIN_HOURS} or more hours before the appointment`,
+    });
+
+  if (!isValidDate(date)) return res.status(400).json({ message: 'date must be YYYY-MM-DD' });
+  if (date === appt.date && startTime === appt.startTime)
+    return res.status(400).json({ message: 'Please choose a different slot' });
+
+  const windowError = checkWindow(date);
+  if (windowError) return res.status(400).json({ message: windowError });
+
+  const doctor = await Doctor.findOne({ _id: appt.doctor, status: 'approved' });
+  if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+  if (appt.mode === 'online' && !doctor.modes.online)
+    return res.status(400).json({ message: 'This doctor no longer offers online consultation' });
+  if (appt.mode === 'in-person' && !doctor.modes.inPerson)
+    return res.status(400).json({ message: 'This doctor no longer offers in-person visits' });
+
+  const availability = await Availability.findOne({ doctor: doctor._id });
+  if (!availability || availability.daysOff.includes(date))
+    return res.status(400).json({ message: 'Doctor is not available on this date' });
+
+  const slot = generateSlots(availability, date, appt.mode).find((s) => s.startTime === startTime);
+  if (!slot) return res.status(400).json({ message: 'This time is not an available slot' });
+  if (slotInstant(date, startTime) <= now)
+    return res.status(400).json({ message: 'This slot time has already passed' });
+
+  await Appointment.updateMany(
+    { doctor: doctor._id, date, startTime, isActive: true, status: 'held', holdExpiresAt: { $lte: now } },
+    { status: 'expired', isActive: false }
+  );
+
+  const clash = await Appointment.findOne({
+    patient: req.user._id, date, startTime, _id: { $ne: appt._id }, ...blockingFilter(now),
+  });
+  if (clash) return res.status(409).json({ message: 'You already have an appointment at this time' });
+
+  const old = { date: appt.date, startTime: appt.startTime };
+  let updated;
+  try {
+    // Unique index naya slot bhara hone par isey rok deta hai, purani appointment waise hi rehti hai
+    updated = await Appointment.findOneAndUpdate(
+      {
+        _id: appt._id, patient: req.user._id, status: 'confirmed', isActive: true,
+        queueStatus: 'none', date: old.date, startTime: old.startTime,
+      },
+      {
+        date,
+        startTime,
+        endTime: slot.endTime,
+        session: sessionOf(startTime),
+        $inc: { rescheduleCount: 1 },
+      },
+      { new: true }
+    );
+  } catch (err) {
+    if (err.code === 11000)
+      return res.status(409).json({ message: 'Sorry, that slot was just booked by someone else' });
+    throw err;
+  }
+  if (!updated) return res.status(409).json({ message: 'Appointment was just updated. Please refresh.' });
+
+  await notify(req.user._id, {
+    type: 'appointment',
+    title: 'Appointment rescheduled',
+    message: `Your appointment with ${doctor.name} moved to ${date} at ${startTime}.`,
+    link: '/dashboard',
+  });
+  await notify(doctor.user, {
+    type: 'appointment',
+    title: 'Appointment rescheduled',
+    message: `${appt.patientName} moved ${old.date} ${old.startTime} to ${date} ${startTime}.`,
+    link: '/dashboard',
+  });
+
+  // Purana slot khali: waiting list ko offer
+  await offerFreedSlot({
+    doctorId: doctor._id, date: old.date, startTime: old.startTime, mode: appt.mode,
+  }).catch((err) => console.error('Waitlist offer failed:', err.message));
+
+  res.json({ message: 'Appointment rescheduled.', appointment: updated });
+});
+
+// ---------- Doctor cancellation ----------
+
 const tellPatient = (appt, doctor, reason, refund) =>
   notify(appt.patient, {
     type: 'appointment_cancelled',
@@ -286,7 +402,7 @@ const tellPatient = (appt, doctor, reason, refund) =>
     link: `/doctors/${doctor._id}`,
   });
 
-// PATCH /api/appointments/:id/doctor-cancel   body: { reason }   (doctor, sirf apni)
+// PATCH /api/appointments/:id/doctor-cancel   body: { reason }
 export const doctorCancel = asyncHandler(async (req, res) => {
   const reason = String(req.body.reason || '').trim().slice(0, 300);
   if (reason.length < 5)
@@ -303,11 +419,20 @@ export const doctorCancel = asyncHandler(async (req, res) => {
   const blocked = cancelBlocker(appt);
   if (blocked) return res.status(400).json({ message: blocked });
 
-  // Doctor ke cancel par hamesha poora refund
   const out = await cancelAndRefund(appt, { by: 'doctor', reason, percent: 100 });
   if (!out) return res.status(409).json({ message: 'Appointment was just updated. Please refresh.' });
 
   await tellPatient(out.appointment, doctor, reason, out.refund);
+
+  if (appt.queueStatus !== 'none') {
+    await afterQueueChange({
+      doctorId: doctor._id,
+      date: appt.date,
+      session: appt.session || sessionOf(appt.startTime),
+      extraUserIds: [appt.patient],
+    });
+  }
+
   res.json({
     message: `Appointment cancelled. The patient has been notified${out.refund ? ' and a full refund started' : ''}.`,
     appointment: out.appointment,
@@ -320,7 +445,8 @@ const PARTS = {
   evening: ['13:00', '24:00'],
 };
 
-// POST /api/appointments/doctor/cancel-session   body: { date, part: day|morning|evening, reason }
+// POST /api/appointments/doctor/cancel-session   body: { date, part, reason }
+// Cancelled session ke slots waiting list ko offer NAHI hote.
 export const doctorCancelSession = asyncHandler(async (req, res) => {
   const { date, part } = req.body;
   const reason = String(req.body.reason || '').trim().slice(0, 300);
@@ -336,7 +462,6 @@ export const doctorCancelSession = asyncHandler(async (req, res) => {
 
   const [from, to] = PARTS[part];
 
-  // Pehle slots band karo, taaki cancel ke dauran koi naya booking na kare
   await Availability.findOneAndUpdate(
     { doctor: doctor._id },
     { $push: { blocked: { date, from, to } } },
@@ -360,7 +485,7 @@ export const doctorCancelSession = asyncHandler(async (req, res) => {
     if (!out) continue;
     cancelled++;
     if (out.refund) refunds++;
-    await tellPatient(out.appointment, doctor, reason, out.refund); // har patient ko alag notification
+    await tellPatient(out.appointment, doctor, reason, out.refund);
   }
 
   res.json({

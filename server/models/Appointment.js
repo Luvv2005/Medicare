@@ -9,6 +9,7 @@ const appointmentSchema = new mongoose.Schema(
     startTime: { type: String, required: true }, // "10:15"
     endTime: { type: String, required: true },
     mode: { type: String, enum: ['online', 'in-person'], required: true },
+    session: { type: String, enum: ['morning', 'evening'] },
 
     // 1) Appointment status
     status: {
@@ -16,11 +17,10 @@ const appointmentSchema = new mongoose.Schema(
       enum: ['held', 'confirmed', 'cancelled', 'completed', 'no_show', 'expired'],
       default: 'held',
     },
-    // true = ye appointment slot gher raha hai. Unique index isi par lagta hai.
     isActive: { type: Boolean, default: true },
     holdExpiresAt: { type: Date },
 
-    // 2) Payment status (Step 7 mein use hoga)
+    // 2) Payment status
     paymentMethod: { type: String, enum: ['online', 'clinic'], required: true },
     paymentStatus: {
       type: String,
@@ -29,13 +29,29 @@ const appointmentSchema = new mongoose.Schema(
     },
     amount: { type: Number, required: true },
 
-    // 3) Refund status (Step 9 mein use hoga)
+    // 3) Refund status
     refundStatus: {
       type: String,
       enum: ['none', 'pending', 'initiated', 'processed', 'failed'],
       default: 'none',
     },
     refundAmount: { type: Number, default: 0 },
+
+    // Queue (in-person)
+    token: { type: Number },
+    queueStatus: {
+      type: String,
+      enum: ['none', 'waiting', 'called', 'in_consultation', 'done'],
+      default: 'none',
+    },
+    checkedInAt: { type: Date },
+    calledAt: { type: Date },
+    completedAt: { type: Date },
+    noShowAt: { type: Date },
+    approachNotified: { type: Boolean, default: false },
+
+    rescheduleCount: { type: Number, default: 0 },
+    waitlist: { type: mongoose.Schema.Types.ObjectId, ref: 'Waitlist' },
 
     patientName: { type: String, required: true, trim: true },
     patientPhone: { type: String, required: true, trim: true },
@@ -50,10 +66,15 @@ const appointmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// DOUBLE-BOOKING SE BACHAV: ek doctor, ek date, ek time par sirf EK active appointment
+// DOUBLE-BOOKING SE BACHAV
 appointmentSchema.index(
   { doctor: 1, date: 1, startTime: 1 },
   { unique: true, partialFilterExpression: { isActive: true } }
+);
+// Ek doctor, date, session mein ek token sirf ek baar
+appointmentSchema.index(
+  { doctor: 1, date: 1, session: 1, token: 1 },
+  { unique: true, partialFilterExpression: { token: { $type: 'number' } } }
 );
 appointmentSchema.index({ patient: 1, date: 1 });
 

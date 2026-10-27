@@ -9,8 +9,8 @@
     "start": "node server.js",
     "create-admin": "node scripts/createAdmin.js",
     "seed:demo": "node scripts/seedDemo.js",
-  "seed:demo:remove": "node scripts/seedDemo.js --remove",
-  "test:race": "node scripts/testRace.js"
+    "seed:demo:remove": "node scripts/seedDemo.js --remove",
+    "test:race": "node scripts/testRace.js"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +24,8 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.2",
-    "morgan": "^1.12.1"
+    "morgan": "^1.12.1",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

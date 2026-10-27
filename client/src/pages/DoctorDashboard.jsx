@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPatch, apiPost } from '../services/api';
+import useSocketEvent from '../hooks/useSocketEvent';
 import AvailabilityEditor from '../components/AvailabilityEditor';
 import DoctorProfileEditor from '../components/DoctorProfileEditor';
+import DoctorQueue from '../components/DoctorQueue';
 import { formatDate, formatTime, istToday } from '../utils/dates';
 import { effStatus, STATUS_CHIP, statusLabel, payLabel, refundLabel } from '../utils/appointmentUi';
 
@@ -39,7 +41,7 @@ function SessionCancel({ onDone }) {
       <h5>Cancel a session</h5>
       <p className="mc-muted small">
         Cancels every booking in that time, notifies each patient, refunds online payments, and stops new
-        bookings for it.
+        bookings for it. Those slots are not offered to the waiting list.
       </p>
       {error && <div className="alert alert-danger py-2">{error}</div>}
       {msg && <div className="alert alert-success py-2">{msg}</div>}
@@ -94,6 +96,7 @@ export default function DoctorDashboard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useSocketEvent('queue:update', load);
 
   const cancelAppt = async (a) => {
     const reason = window.prompt(
@@ -105,6 +108,20 @@ export default function DoctorDashboard() {
     try {
       const r = await apiPatch(`/appointments/${a._id}/doctor-cancel`, { reason });
       setActionMsg(r.message);
+    } catch (err) {
+      setActionMsg(err.message);
+    } finally {
+      setBusyId('');
+      load();
+    }
+  };
+
+  const mark = async (a, action) => {
+    setActionMsg('');
+    setBusyId(a._id);
+    try {
+      await apiPatch(`/queue/${a._id}/action`, { action });
+      setActionMsg(action === 'complete' ? 'Marked as completed.' : 'Marked as no-show.');
     } catch (err) {
       setActionMsg(err.message);
     } finally {
@@ -148,20 +165,23 @@ export default function DoctorDashboard() {
         ))}
       </div>
 
-      <div className="mc-auth-tabs mb-3" style={{ maxWidth: 560 }}>
-        <button type="button" className={tab === 'appointments' ? 'active' : ''} onClick={() => setTab('appointments')}>
-          Appointments
-        </button>
-        <button type="button" className={tab === 'availability' ? 'active' : ''} onClick={() => setTab('availability')}>
-          Availability
-        </button>
-        <button type="button" className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>
-          Profile
-        </button>
+      <div className="mc-chips mb-3">
+        {[
+          ['appointments', 'Appointments'],
+          ['queue', 'Queue'],
+          ['availability', 'Availability'],
+          ['profile', 'Profile'],
+        ].map(([key, label]) => (
+          <button key={key} type="button" className={`mc-chip-btn ${tab === key ? 'active' : ''}`}
+            onClick={() => setTab(key)}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === 'availability' && <AvailabilityEditor />}
       {tab === 'profile' && <DoctorProfileEditor />}
+      {tab === 'queue' && <DoctorQueue onChanged={load} />}
 
       {tab === 'appointments' && (
         <>
@@ -182,34 +202,52 @@ export default function DoctorDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((a) => (
-                      <tr key={a._id}>
-                        <td>{formatDate(a.date)}</td>
-                        <td>{formatTime(a.startTime)}</td>
-                        <td>{a.patientName}</td>
-                        <td>{a.patientPhone}</td>
-                        <td className="text-capitalize">{a.mode}</td>
-                        <td><span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span></td>
-                        <td>
-                          {payLabel(a.paymentStatus)}
-                          {a.refundStatus !== 'none' && (
-                            <div className="small mc-muted">{refundLabel(a.refundStatus)}</div>
-                          )}
-                        </td>
-                        <td className="text-nowrap">
-                          {['held', 'confirmed'].includes(a.eff) && a.date >= today && (
-                            <button className="btn btn-mc-outline btn-mc-sm" disabled={busyId === a._id}
-                              onClick={() => cancelAppt(a)}>
-                              Cancel
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {items.map((a) => {
+                      const started = new Date(`${a.date}T${a.startTime}:00+05:30`) <= new Date();
+                      return (
+                        <tr key={a._id}>
+                          <td>{formatDate(a.date)}</td>
+                          <td>{formatTime(a.startTime)}</td>
+                          <td>{a.patientName}</td>
+                          <td>{a.patientPhone}</td>
+                          <td className="text-capitalize">{a.mode}</td>
+                          <td><span className={`mc-chip ${STATUS_CHIP[a.eff] || ''}`}>{statusLabel(a.eff)}</span></td>
+                          <td>
+                            {payLabel(a.paymentStatus)}
+                            {a.refundStatus !== 'none' && (
+                              <div className="small mc-muted">{refundLabel(a.refundStatus)}</div>
+                            )}
+                          </td>
+                          <td className="text-nowrap">
+                            {a.eff === 'confirmed' && !started && (
+                              <button className="btn btn-mc-outline btn-mc-sm" disabled={busyId === a._id}
+                                onClick={() => cancelAppt(a)}>
+                                Cancel
+                              </button>
+                            )}
+                            {a.eff === 'confirmed' && started && (
+                              <>
+                                <button className="btn btn-mc-primary btn-mc-sm me-1" disabled={busyId === a._id}
+                                  onClick={() => mark(a, 'complete')}>
+                                  Complete
+                                </button>
+                                <button className="btn btn-mc-outline btn-mc-sm" disabled={busyId === a._id}
+                                  onClick={() => mark(a, 'no_show')}>
+                                  No-show
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
+            <p className="small mc-muted mt-2 mb-0">
+              For in-person visits today, use the Queue tab. It handles check-in, calling and starting the consultation.
+            </p>
           </div>
         </>
       )}

@@ -1,0 +1,48 @@
+.mc-token {
+  display: inline-grid;
+  place-items: center;
+  min-width: 64px;
+  height: 64px;
+  padding: 0 0.8rem;
+  border-radius: 14px;
+  background: var(--mc-primary);
+  color: var(--mc-primary-contrast);
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+.mc-queue-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.7rem;
+  padding: 0.8rem 1rem;
+  background: var(--mc-surface-2);
+  border: 1px solid var(--mc-border);
+  border-radius: 12px;
+}
+.mc-queue-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+}
+.mc-queue-stats strong {
+  display: block;
+  font-size: 1.15rem;
+}
+.mc-modal--wide {
+  max-width: 540px;
+}
+.mc-serving {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.mc-offer {
+  border: 1px solid #d99a2b;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.7rem;
+  background: var(--mc-surface-2);
+}

@@ -1,11 +1,18 @@
 import Notification from '../models/Notification.js';
 import Doctor from '../models/Doctor.js';
+import { emitToUser } from '../socket.js';
 
 // Notification fail ho to bhi main kaam na ruke
-export const notify = (userId, { type, title, message, link = '' }) =>
-  Notification.create({ user: userId, type, title, message, link }).catch((err) =>
-    console.error('Notification failed:', err.message)
-  );
+export const notify = async (userId, { type, title, message, link = '' }) => {
+  try {
+    const n = await Notification.create({ user: userId, type, title, message, link });
+    emitToUser(userId, 'notification:new');
+    return n;
+  } catch (err) {
+    console.error('Notification failed:', err.message);
+    return null;
+  }
+};
 
 // Appointment confirm hone par patient aur doctor dono ko
 export const notifyBooking = async (appt) => {
@@ -23,4 +30,5 @@ export const notifyBooking = async (appt) => {
     message: `${appt.patientName} booked ${appt.date} at ${appt.startTime} (${appt.mode}).`,
     link: '/dashboard',
   });
+  emitToUser(doctor.user, 'queue:update');
 };

@@ -27,11 +27,11 @@ export default function BookingPanel({ doctor }) {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [payAppt, setPayAppt] = useState(null); // payment window khuli hai
-  const [held, setHeld] = useState(null); // payment adhoori, retry ke liye
-  const [done, setDone] = useState(null); // confirmed appointment
+  const [info, setInfo] = useState('');
+  const [payAppt, setPayAppt] = useState(null);
+  const [held, setHeld] = useState(null);
+  const [done, setDone] = useState(null);
 
-  // Clinic pay sirf in-person aur jab doctor ne allow kiya ho
   const clinicOk = mode === 'in-person' && doctor.payAtClinic;
   const method = payChoice === 'clinic' && clinicOk ? 'clinic' : 'online';
 
@@ -40,6 +40,7 @@ export default function BookingPanel({ doctor }) {
     setLoadingSlots(true);
     setSlotError('');
     setSelected('');
+    setInfo('');
     apiGet(`/doctors/${doctor._id}/slots?date=${date}&mode=${mode}`)
       .then((res) => !cancelled && setSlots(res.slots))
       .catch((err) => {
@@ -52,11 +53,17 @@ export default function BookingPanel({ doctor }) {
     return () => { cancelled = true; };
   }, [doctor._id, date, mode, reloadKey]);
 
+  const validatePatient = () => {
+    if (name.trim().length < 2) return 'Please enter patient name';
+    if (!phoneRegex.test(phone.trim())) return 'Enter a valid 10-digit phone number';
+    return '';
+  };
+
   const book = async () => {
     setError('');
     if (!selected) return setError('Please choose a time slot');
-    if (name.trim().length < 2) return setError('Please enter patient name');
-    if (!phoneRegex.test(phone.trim())) return setError('Enter a valid 10-digit phone number');
+    const v = validatePatient();
+    if (v) return setError(v);
 
     setBusy(true);
     try {
@@ -70,7 +77,7 @@ export default function BookingPanel({ doctor }) {
         patientPhone: phone.trim(),
         reason: reason.trim(),
       });
-      if (method === 'online') setPayAppt(res.appointment); // payment window kholo
+      if (method === 'online') setPayAppt(res.appointment);
       else setDone(res.appointment);
     } catch (err) {
       setError(err.message);
@@ -78,6 +85,32 @@ export default function BookingPanel({ doctor }) {
     } finally {
       setBusy(false);
     }
+    return undefined;
+  };
+
+  const joinWaitlist = async () => {
+    setError('');
+    setInfo('');
+    const v = validatePatient();
+    if (v) return setError(v);
+    setBusy(true);
+    try {
+      const res = await apiPost('/waitlist', {
+        doctorId: doctor._id,
+        date,
+        mode,
+        patientName: name.trim(),
+        patientPhone: phone.trim(),
+        reason: reason.trim(),
+      });
+      setInfo(res.message);
+    } catch (err) {
+      setError(err.message);
+      if (err.status === 400) setReloadKey((k) => k + 1);
+    } finally {
+      setBusy(false);
+    }
+    return undefined;
   };
 
   const onPaid = (appointment) => {
@@ -93,7 +126,6 @@ export default function BookingPanel({ doctor }) {
     setReloadKey((k) => k + 1);
   };
 
-  // ---------- Confirmed screen ----------
   if (done) {
     return (
       <div className="mc-card mc-sticky" id="book">
@@ -108,6 +140,7 @@ export default function BookingPanel({ doctor }) {
   }
 
   const isPatient = user?.role === 'patient';
+  const allTaken = !loadingSlots && !slotError && slots.length > 0 && slots.every((s) => !s.available);
 
   return (
     <div className="mc-card mc-sticky" id="book">
@@ -117,7 +150,6 @@ export default function BookingPanel({ doctor }) {
       <div className="mc-doc-fee mb-1">₹{doctor.consultationFee}</div>
       <p className="mc-muted small">Consultation fee</p>
 
-      {/* Mode */}
       {doctor.modes.online && doctor.modes.inPerson && (
         <div className="d-flex gap-2 mb-3">
           <button type="button" className={`mc-chip-btn flex-fill ${mode === 'online' ? 'active' : ''}`}
@@ -127,7 +159,6 @@ export default function BookingPanel({ doctor }) {
         </div>
       )}
 
-      {/* Dates */}
       <div className="mc-days mb-3">
         {days.map((d) => (
           <button key={d} type="button" className={`mc-day ${date === d ? 'active' : ''}`}
@@ -137,7 +168,6 @@ export default function BookingPanel({ doctor }) {
         ))}
       </div>
 
-      {/* Slots */}
       {loadingSlots && <p className="mc-muted small">Loading slots...</p>}
       {slotError && <div className="alert alert-danger py-2">{slotError}</div>}
       {!loadingSlots && !slotError && slots.length === 0 && (
@@ -153,9 +183,18 @@ export default function BookingPanel({ doctor }) {
         ))}
       </div>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      {allTaken && isPatient && (
+        <div className="mc-note mb-3">
+          <div className="mb-2">All slots on this day are taken. If someone cancels, we can offer you a slot.</div>
+          <button className="btn btn-mc-outline btn-mc-sm" onClick={joinWaitlist} disabled={busy}>
+            Join the waiting list
+          </button>
+        </div>
+      )}
 
-      {/* Held: payment retry */}
+      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      {info && <div className="alert alert-success py-2" role="status">{info}</div>}
+
       {held && (
         <div className="mb-3">
           <button className="btn btn-mc-primary w-100" onClick={() => setPayAppt(held)}>
