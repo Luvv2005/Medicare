@@ -210,7 +210,7 @@ export default function PatientDashboard() {
           <PayModal
             appointment={payAppt}
             onClose={() => { setPayAppt(null); load(); }}
-            onPaid={() => { setPayAppt(null); setMsg('Test payment successful. Appointment confirmed.'); load(); }}
+            onPaid={() => { setPayAppt(null); setMsg('Payment successful. Appointment confirmed.'); load(); }}
           />
         )}
         {reschedAppt && (

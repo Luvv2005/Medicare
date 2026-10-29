@@ -2,11 +2,11 @@ import Refund from '../models/Refund.js';
 import Appointment from '../models/Appointment.js';
 import Order from '../models/Order.js';
 import { notify } from './notify.js';
+import { getRazorpay } from '../config/razorpay.js';
 import { MOCK_REFUND_SETTLE_SECONDS } from '../config/policy.js';
 
 const modelFor = (type) => (type === 'appointment' ? Appointment : Order);
 
-// Appointment/order par refundStatus ko Refund record ke saath same rakhta hai
 const sync = (refund) =>
   modelFor(refund.sourceType).updateOne({ _id: refund.sourceId }, { refundStatus: refund.status });
 
@@ -29,19 +29,35 @@ const notifyRefund = (refund) => {
   return notify(refund.patient, { type: 'refund', title: m[0], message: m[1], link });
 };
 
-// Gateway ko refund request bhejna. Abhi mock. Last step mein yahan Razorpay refund API aayegi.
-const sendToGateway = async (refund) => ({
-  providerRefundId: `mock_rfnd_${refund._id}_${refund.attempts}`,
-});
+// Gateway ko refund request bhejna
+const sendToGateway = async (refund) => {
+  if (refund.provider === 'razorpay') {
+    const rz = getRazorpay();
+    if (!rz) throw new Error('Razorpay is not configured');
+    // Retry par pehle purana refund check karo, taaki duplicate refund na bane
+    if (refund.providerRefundId) {
+      const old = await rz.refunds.fetch(refund.providerRefundId).catch(() => null);
+      if (old && old.status !== 'failed') return { providerRefundId: old.id };
+    }
+    const r = await rz.payments.refund(refund.providerPaymentId, {
+      amount: Math.round(refund.amount * 100),
+      speed: 'normal',
+      receipt: String(refund._id),
+      notes: { refundId: String(refund._id) },
+    });
+    return { providerRefundId: r.id };
+  }
+  return { providerRefundId: `mock_rfnd_${refund._id}_${refund.attempts}` };
+};
 
-// pending ya failed refund ko 'initiated' karta hai. Atomic claim: do baar chalane par bhi gateway ko ek hi baar request jati hai.
+// pending ya failed refund ko 'initiated' karta hai (atomic claim)
 export const initiateRefund = async (refundId) => {
   const refund = await Refund.findOneAndUpdate(
     { _id: refundId, status: { $in: ['pending', 'failed'] } },
     { status: 'initiated', initiatedAt: new Date(), failureReason: '', $inc: { attempts: 1 } },
     { new: true }
   );
-  if (!refund) return null; // pehle hi chal chuka hai
+  if (!refund) return null;
 
   try {
     const out = await sendToGateway(refund);
@@ -49,7 +65,7 @@ export const initiateRefund = async (refundId) => {
   } catch (err) {
     refund.status = 'failed';
     refund.failedAt = new Date();
-    refund.failureReason = err.message;
+    refund.failureReason = String(err?.error?.description || err.message).slice(0, 200);
   }
   await refund.save();
   await sync(refund);
@@ -57,9 +73,10 @@ export const initiateRefund = async (refundId) => {
   return refund;
 };
 
-// Cancel ke baad refund shuru karta hai. Amount 0 ho to kuch nahi banta.
+// Cancel ke baad refund shuru. Asli payment (mock_ se shuru nahi) ka refund Razorpay se jata hai.
 export const startRefund = async ({ sourceType, source, amount, reason, providerPaymentId }) => {
   if (!(amount > 0)) return null;
+  const live = Boolean(providerPaymentId) && !String(providerPaymentId).startsWith('mock_');
 
   let refund;
   try {
@@ -69,12 +86,11 @@ export const startRefund = async ({ sourceType, source, amount, reason, provider
       patient: sourceType === 'appointment' ? source.patient : source.user,
       amount,
       reason,
-      provider: 'mock',
+      provider: live ? 'razorpay' : 'mock',
       providerPaymentId,
-      isSimulated: true,
+      isSimulated: !live,
     });
   } catch (err) {
-    // Duplicate request: wahi purana refund wapas do, naya nahi banta
     if (err.code === 11000) return Refund.findOne({ sourceType, sourceId: source._id });
     throw err;
   }
@@ -84,6 +100,43 @@ export const startRefund = async ({ sourceType, source, amount, reason, provider
     { refundStatus: 'pending', refundAmount: amount }
   );
   return (await initiateRefund(refund._id)) || refund;
+};
+
+// Razorpay webhook ya sync se: gateway ne jo bataya wahi status
+export const applyGatewayRefund = async (providerRefundId, status, reason = '') => {
+  const update =
+    status === 'processed'
+      ? { status: 'processed', processedAt: new Date() }
+      : { status: 'failed', failedAt: new Date(), failureReason: reason || 'Gateway reported failure' };
+  const refund = await Refund.findOneAndUpdate({ providerRefundId, status: 'initiated' }, update, { new: true });
+  if (!refund) return null;
+  await sync(refund);
+  await notifyRefund(refund);
+  return refund;
+};
+
+// Webhook miss ho jaye to bhi status theek ho: initiated Razorpay refunds ko poochho
+export const syncRazorpayRefunds = async () => {
+  const rz = getRazorpay();
+  if (!rz) return 0;
+  const due = await Refund.find({
+    provider: 'razorpay',
+    status: 'initiated',
+    providerRefundId: { $exists: true },
+    initiatedAt: { $lte: new Date(Date.now() - 2 * 60 * 1000) },
+  }).limit(50);
+
+  let count = 0;
+  for (const r of due) {
+    try {
+      const g = await rz.refunds.fetch(r.providerRefundId);
+      if (g.status === 'processed' && (await applyGatewayRefund(r.providerRefundId, 'processed'))) count++;
+      if (g.status === 'failed' && (await applyGatewayRefund(r.providerRefundId, 'failed'))) count++;
+    } catch (err) {
+      console.error('Refund sync failed:', err.message);
+    }
+  }
+  return count;
 };
 
 // Sirf TEST: initiated refund ko failed bana deta hai
@@ -99,7 +152,7 @@ export const markRefundFailed = async (refundId, reason) => {
   return refund;
 };
 
-// Simulated gateway: initiated refund kuch der baad 'processed' ho jata hai
+// Simulated gateway: sirf mock refunds
 export const settleMockRefunds = async () => {
   const cutoff = new Date(Date.now() - MOCK_REFUND_SETTLE_SECONDS * 1000);
   const due = await Refund.find({

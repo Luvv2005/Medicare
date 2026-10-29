@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiGet } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { FEATURES } from '../config/features';
-import { initials, avatarColor, mapsUrl, directionsUrl } from '../utils/doctorUtils';
 import BookingPanel from '../components/BookingPanel';
+import ReviewSection from '../components/ReviewSection';
+import MapView from '../components/MapView';
+import { initials, avatarColor, mapsUrl, directionsUrl, hasCoords } from '../utils/doctorUtils';
 
 export default function DoctorProfile() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,6 +22,14 @@ export default function DoctorProfile() {
       .catch((err) => setError(err.status === 404 ? 'Doctor not found' : err.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const points = useMemo(
+    () =>
+      doctor && hasCoords(doctor.clinic)
+        ? [{ lat: doctor.clinic.location.coordinates[1], lng: doctor.clinic.location.coordinates[0], title: doctor.clinic.name, sub: doctor.clinic.address }]
+        : [],
+    [doctor]
+  );
 
   if (loading) return <div className="container py-5 text-center mc-muted">Loading...</div>;
 
@@ -38,7 +50,6 @@ export default function DoctorProfile() {
 
       <div className="row g-4">
         <div className="col-lg-8">
-          {/* Header */}
           <div className="mc-card mb-3">
             <div className="d-flex gap-3 flex-wrap">
               {d.profilePhoto ? (
@@ -90,6 +101,7 @@ export default function DoctorProfile() {
             <p className="mc-muted">
               {d.clinic.address}, {d.clinic.city}, {d.clinic.state} - {d.clinic.pincode}
             </p>
+            {points.length > 0 && <div className="mb-3"><MapView points={points} height={240} /></div>}
             {d.modes.inPerson ? (
               <div className="mc-doc-actions">
                 <a className="btn btn-mc-outline btn-mc-sm" href={mapsUrl(d.clinic)} target="_blank" rel="noopener noreferrer">Open in Maps</a>
@@ -100,33 +112,20 @@ export default function DoctorProfile() {
               <p className="mc-muted mb-0">This doctor offers online consultations only.</p>
             )}
           </div>
+
+          <ReviewSection doctorId={d._id} />
         </div>
 
-        {/* Booking side card */}
-         <div className="col-lg-4">
-          <BookingPanel doctor={d} />
-          {FEATURES.chat && (
-            <Link to="/chat" className="btn btn-mc-outline w-100 mt-3">Chat with doctor</Link>
-          )}
-        </div>
         <div className="col-lg-4">
-          <div className="mc-card mc-sticky" id="book">
-            <h5>Book appointment</h5>
-            <div className="mc-doc-fee mb-2">₹{d.consultationFee}</div>
-            <p className="mc-muted small">
-              Consultation fee
-              {d.payAtClinic && d.modes.inPerson ? ' · Pay at clinic available' : ''}
-            </p>
-            <button className="btn btn-mc-primary w-100 mb-2" disabled>
-              Slots coming soon
-            </button>
-            <p className="small mc-muted mb-2">
-              Appointment slots and payment are built in Step 6 and Step 7.
-            </p>
-            {FEATURES.chat && (
-              <Link to="/chat" className="btn btn-mc-outline w-100">Chat with doctor</Link>
-            )}
-          </div>
+          <BookingPanel doctor={d} />
+          {FEATURES.chat && user?.role === 'patient' && (
+            <Link to={`/chat?doctor=${d._id}`} className="btn btn-mc-outline w-100 mt-3">
+              Chat with doctor
+            </Link>
+          )}
+          {FEATURES.chat && user?.role === 'patient' && (
+            <p className="small mc-muted mt-1">Chat and calls open after you have a confirmed appointment.</p>
+          )}
         </div>
       </div>
     </div>

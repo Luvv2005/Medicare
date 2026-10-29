@@ -72,8 +72,8 @@ export default function ProductDetail() {
 
           {p.requiresPrescription && (
             <div className="mc-note mc-note--warn mb-3">
-              This medicine needs a valid prescription. You can add it to the cart, but checkout for
-              prescription medicines is not available until prescription upload is built.
+              This medicine needs a valid prescription. Add it to the cart, then upload your prescription
+              at checkout. An admin must approve it before you can place the order.
             </div>
           )}
 

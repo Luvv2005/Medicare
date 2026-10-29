@@ -50,7 +50,7 @@ export default function Orders() {
         <OrderPayModal
           order={payOrder}
           onClose={() => { setPayOrder(null); load(); }}
-          onPaid={(o) => { setPayOrder(null); setMsg(`Test payment successful. Order ${o.orderNo} placed.`); load(); }}
+          onPaid={(o) => { setPayOrder(null); setMsg(`Payment successful. Order ${o.orderNo} placed.`); load(); }}
         />
       )}
 

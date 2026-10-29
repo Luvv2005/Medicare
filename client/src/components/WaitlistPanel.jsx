@@ -12,7 +12,7 @@ export default function WaitlistPanel({ onChanged }) {
   const [now, setNow] = useState(Date.now());
 
   const load = useCallback(
-    () => apiGet('/waitlist/mine').then((d) => setEntries(d.entries)).catch(() => {}),
+    () => apiGet('/waitlist/mine').then((d) => setEntries(d.entries)).catch(() => { }),
     []
   );
 
@@ -62,7 +62,7 @@ export default function WaitlistPanel({ onChanged }) {
         <PayModal
           appointment={payAppt}
           onClose={() => { setPayAppt(null); setMsg('Payment pending. Pay from Upcoming below within 10 minutes.'); onChanged(); }}
-          onPaid={() => { setPayAppt(null); setMsg('Test payment successful. Appointment confirmed.'); onChanged(); }}
+          onPaid={() => { setPayAppt(null); setMsg('Payment successful. Appointment confirmed.'); onChanged(); }}
         />
       )}
       <h5>Waiting list</h5>

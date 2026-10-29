@@ -6,6 +6,7 @@ import { usePrefs } from '../context/PrefsContext';
 import useAddToCart from '../hooks/useAddToCart';
 import DoctorCard from '../components/DoctorCard';
 import ProductCard from '../components/ProductCard';
+import '../styles/home.css';
 
 const ACTIONS = [
   { to: '/find-doctor', icon: '🩺', title: 'Find a Doctor', text: 'Search verified doctors' },
@@ -76,7 +77,7 @@ export default function Home() {
   };
 
   return (
-    <>
+    <div className="mc-home">
       <section className="mc-hero">
         <div className="container-xl">
           <h1>{t('hero_title')}</h1>
@@ -138,9 +139,7 @@ export default function Home() {
 
         <section className="mc-block">
           <SectionHead title={t('featured_doctors')} to="/find-doctor" linkText={t('view_all')} />
-          {!loading && doctors.length === 0 && (
-            <p className="mc-muted text-center">No doctors are listed yet.</p>
-          )}
+          {!loading && doctors.length === 0 && <p className="mc-muted text-center">No doctors are listed yet.</p>}
           <div className="mc-doc-grid">
             {doctors.map((d) => <DoctorCard key={d._id} doctor={d} layout="grid" />)}
           </div>
@@ -148,9 +147,7 @@ export default function Home() {
 
         <section className="mc-block">
           <SectionHead title={t('popular_medicines')} to="/buy-medicines" linkText={t('view_all')} />
-          {!loading && products.length === 0 && (
-            <p className="mc-muted text-center">No products are listed yet.</p>
-          )}
+          {!loading && products.length === 0 && <p className="mc-muted text-center">No products are listed yet.</p>}
           <div className="mc-prod-grid">
             {products.map((p) => (
               <ProductCard key={p._id} product={p} onAdd={add} adding={busyId === p._id} />
@@ -207,6 +204,6 @@ export default function Home() {
           </section>
         )}
       </div>
-    </>
+    </div>
   );
 }

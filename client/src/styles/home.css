@@ -1,0 +1,17 @@
+.mc-home .mc-doc-grid,
+.mc-home .mc-prod-grid,
+.mc-home .mc-cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+.mc-home .mc-doc-grid > * { flex: 1 1 260px; max-width: 300px; }
+.mc-home .mc-prod-grid > * { flex: 1 1 220px; max-width: 260px; }
+.mc-home .mc-cat-grid > * { flex: 1 1 170px; max-width: 230px; }
+
+.mc-home .mc-doc-main { align-items: center; text-align: center; }
+.mc-home .mc-doc-side > div { justify-content: center; }
+.mc-home .mc-prod { text-align: center; }
+.mc-home .mc-prod .d-flex { justify-content: center; }
+.mc-home .mc-sec-head { text-align: center; }

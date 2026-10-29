@@ -4,7 +4,7 @@ import {
   initials, avatarColor, hasCoords, distanceKm, mapsUrl, directionsUrl,
 } from '../utils/doctorUtils';
 
-// layout: 'grid' (dark, tumhara demo jaisa) ya 'list' (light, Apollo jaisa)
+// layout: 'grid' (dark) ya 'list' (light, Apollo jaisa)
 export default function DoctorCard({ doctor: d, layout = 'grid', userLoc }) {
   const profile = `/doctors/${d._id}`;
   const km =
@@ -75,10 +75,7 @@ export default function DoctorCard({ doctor: d, layout = 'grid', userLoc }) {
             </>
           )}
           {FEATURES.chat && (
-            <Link to="/chat" className="btn btn-mc-outline btn-mc-sm">Chat</Link>
-          )}
-          {FEATURES.call && (
-            <button type="button" className="btn btn-mc-outline btn-mc-sm">Call</button>
+            <Link to={`/chat?doctor=${d._id}`} className="btn btn-mc-outline btn-mc-sm">Chat</Link>
           )}
         </div>
       </div>

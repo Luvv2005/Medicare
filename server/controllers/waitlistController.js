@@ -18,7 +18,7 @@ const blocking = (now) => ({
   $or: [{ status: 'confirmed' }, { status: 'held', holdExpiresAt: { $gt: now } }],
 });
 
-// POST /api/waitlist   body: { doctorId, date, mode, patientName, patientPhone, reason }
+// POST /api/waitlist
 export const joinWaitlist = asyncHandler(async (req, res) => {
   const { doctorId, date, mode, reason } = req.body;
   const patientName = String(req.body.patientName || req.user.name || '').trim();
@@ -58,12 +58,7 @@ export const joinWaitlist = asyncHandler(async (req, res) => {
 
   try {
     const entry = await Waitlist.create({
-      patient: req.user._id,
-      doctor: doctor._id,
-      date,
-      mode,
-      patientName,
-      patientPhone,
+      patient: req.user._id, doctor: doctor._id, date, mode, patientName, patientPhone,
       reason: String(reason || '').slice(0, 300),
     });
     res.status(201).json({
@@ -85,7 +80,7 @@ export const myWaitlist = asyncHandler(async (req, res) => {
   res.json({ entries: entries.filter((e) => e.doctor) });
 });
 
-// POST /api/waitlist/:id/accept   body: { paymentMethod: 'online' | 'clinic' }
+// POST /api/waitlist/:id/accept   body: { paymentMethod }
 export const acceptOffer = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Offer not found' });
   const { paymentMethod } = req.body;
@@ -104,27 +99,16 @@ export const acceptOffer = asyncHandler(async (req, res) => {
 
   if (paymentMethod === 'clinic' && (w.mode !== 'in-person' || !doctor.payAtClinic))
     return res.status(400).json({ message: 'Pay at clinic is not available for this appointment' });
-  if (paymentMethod === 'online' && paymentMode() !== 'mock')
-    return res.status(400).json({ message: 'Online payment is not available yet. Choose pay at clinic if offered.' });
+  if (paymentMethod === 'online' && paymentMode() === 'off')
+    return res.status(400).json({ message: 'Online payment is not available right now. Choose pay at clinic if offered.' });
 
   const update =
     paymentMethod === 'clinic'
-      ? {
-          paymentMethod: 'clinic',
-          paymentStatus: 'pay_at_clinic',
-          status: 'confirmed',
-          $unset: { holdExpiresAt: 1 },
-        }
+      ? { paymentMethod: 'clinic', paymentStatus: 'pay_at_clinic', status: 'confirmed', $unset: { holdExpiresAt: 1 } }
       : { paymentMethod: 'online', holdExpiresAt: new Date(now.getTime() + HOLD_MINUTES * 60 * 1000) };
 
   const appt = await Appointment.findOneAndUpdate(
-    {
-      _id: w.offer.appointment,
-      patient: req.user._id,
-      status: 'held',
-      isActive: true,
-      holdExpiresAt: { $gt: now },
-    },
+    { _id: w.offer.appointment, patient: req.user._id, status: 'held', isActive: true, holdExpiresAt: { $gt: now } },
     update,
     { new: true }
   );
@@ -143,7 +127,7 @@ export const acceptOffer = asyncHandler(async (req, res) => {
   });
 });
 
-// DELETE /api/waitlist/:id   (waiting: list se hato, offered: offer decline karo)
+// DELETE /api/waitlist/:id
 export const leaveOrDecline = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Entry not found' });
 
@@ -167,10 +151,7 @@ export const leaveOrDecline = asyncHandler(async (req, res) => {
   );
   if (declined.offer?.startTime) {
     await offerFreedSlot({
-      doctorId: declined.doctor,
-      date: declined.date,
-      startTime: declined.offer.startTime,
-      mode: declined.mode,
+      doctorId: declined.doctor, date: declined.date, startTime: declined.offer.startTime, mode: declined.mode,
     });
   }
   res.json({ message: 'Offer declined. The slot goes to the next person.' });

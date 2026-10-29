@@ -132,7 +132,7 @@ export default function BookingPanel({ doctor }) {
         <h5>✅ Appointment {done.status}</h5>
         <p className="mb-1"><strong>{formatDate(done.date)}</strong> at <strong>{formatTime(done.startTime)}</strong></p>
         <p className="mc-muted mb-2 text-capitalize">{done.mode} consultation</p>
-        {done.paymentStatus === 'paid' && <p className="mb-2">₹{done.amount} paid (test payment).</p>}
+        {done.paymentStatus === 'paid' && <p className="mb-2">₹{done.amount} paid online.</p>}
         {done.paymentStatus === 'pay_at_clinic' && <p className="mb-2">Please pay ₹{done.amount} at the clinic.</p>}
         <Link to="/dashboard" className="btn btn-mc-primary w-100">View my appointments</Link>
       </div>
@@ -236,7 +236,7 @@ export default function BookingPanel({ doctor }) {
             <div className="form-check">
               <input className="form-check-input" type="radio" id="pay-online" checked={method === 'online'}
                 onChange={() => setPayChoice('online')} />
-              <label className="form-check-label" htmlFor="pay-online">Pay online (test mode)</label>
+              <label className="form-check-label" htmlFor="pay-online">Pay online (UPI, card, netbanking)</label>
             </div>
             {clinicOk && (
               <div className="form-check">
@@ -257,8 +257,8 @@ export default function BookingPanel({ doctor }) {
             {busy
               ? 'Please wait...'
               : method === 'online'
-              ? `Book and pay ₹${doctor.consultationFee}`
-              : 'Confirm booking (pay at clinic)'}
+                ? `Book and pay ₹${doctor.consultationFee}`
+                : 'Confirm booking (pay at clinic)'}
           </button>
         </>
       )}

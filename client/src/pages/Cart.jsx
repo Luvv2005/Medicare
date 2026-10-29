@@ -42,7 +42,6 @@ export default function Cart() {
       setError(err.message);
     }
   };
-
   const update = async (item, quantity) => {
     setBusyId(item.product._id);
     await change(() => setQty(item.product._id, quantity));
@@ -65,7 +64,6 @@ export default function Cart() {
       </div>
     );
 
-  const blocked = cart.hasIssues || cart.hasPrescriptionItem;
   const away = cart.freeDeliveryAbove - cart.subtotal;
 
   return (
@@ -123,12 +121,12 @@ export default function Cart() {
 
             {cart.hasPrescriptionItem && (
               <div className="mc-note mc-note--warn mb-3 small">
-                Your cart has prescription medicine. Checkout for these needs prescription upload,
-                which is not available yet. Remove the Rx items to continue.
+                Your cart has prescription medicine. At checkout you will upload a prescription,
+                and an admin must approve it before you can order.
               </div>
             )}
 
-            <button className="btn btn-mc-primary w-100" disabled={blocked} onClick={() => navigate('/checkout')}>
+            <button className="btn btn-mc-primary w-100" disabled={cart.hasIssues} onClick={() => navigate('/checkout')}>
               Proceed to checkout
             </button>
             <Link to="/orders" className="btn btn-link w-100 mt-2">My orders</Link>
@@ -138,6 +136,3 @@ export default function Cart() {
     </div>
   );
 }
-
-
-

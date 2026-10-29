@@ -77,9 +77,9 @@ export default function About() {
         <div className="d-flex flex-wrap justify-content-center gap-2">
           {SOON.map((s) => <span key={s} className="mc-chip">{s}</span>)}
         </div>
-        <p className="text-center small mc-muted mt-3 mb-0">
+        {/* <p className="text-center small mc-muted mt-3 mb-0">
           Online payments are currently in test mode while we prepare for live payments.
-        </p>
+        </p> */}
       </section>
     </div>
   );
