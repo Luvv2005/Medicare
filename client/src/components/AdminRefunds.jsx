@@ -34,7 +34,7 @@ export default function AdminRefunds() {
     setBusyId(r._id);
     try {
       await apiPost(`/admin/refunds/${r._id}/${action}`);
-      setMsg(action === 'retry' ? 'Refund retried.' : 'Refund marked as failed (test).');
+      setMsg(action === 'retry' ? 'Refund retried.' : 'Refund marked as failed.');
       await load();
     } catch (err) {
       setError(err.message);
@@ -49,10 +49,13 @@ export default function AdminRefunds() {
         <h5 className="mb-0">Refunds ({refunds.length})</h5>
         <button className="btn btn-mc-outline btn-mc-sm" onClick={load}>Refresh</button>
       </div>
-      <p className="mc-muted small">
+      {/* <p className="mc-muted small">
         Test refunds become <strong>Processed</strong> about a minute after being initiated.
         Actual refunds depend on the payment provider and bank.
-      </p>
+      </p> */}
+      <p className="mc-muted small">
+  Actual refunds depend on the payment provider and bank.
+</p>
 
       {msg && <div className="alert alert-success py-2">{msg}</div>}
       {error && <div className="alert alert-danger py-2">{error}</div>}

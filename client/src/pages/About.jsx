@@ -2,29 +2,23 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 
 const FEATURES = [
-  { icon: '🩺', title: 'Doctor discovery', text: 'Search by name, specialization or city, filter by fee, experience and availability, and open a full profile with qualifications and clinic details.' },
-  { icon: '🗓️', title: 'Appointment booking', text: 'See real free slots, book online or in-person, and cancel with a clear refund policy.' },
-  { icon: '💊', title: 'Medicine store', text: 'Medicines, vitamins, skincare and everyday healthcare products with a cart, checkout and order tracking.' },
+  { icon: '🩺', title: 'Doctor discovery', text: 'Search by name, specialization or city, filter by fee, experience and availability, see clinics on a map, and open a full profile with qualifications and reviews.' },
+  { icon: '🗓️', title: 'Appointment booking', text: 'See real free slots, book online or in-person, reschedule, join a waiting list, and cancel with a clear refund policy.' },
+  { icon: '🎟️', title: 'Live clinic queue', text: 'Check in at the clinic to get a token and follow your turn live, without refreshing.' },
+  { icon: '💊', title: 'Medicine store', text: 'Medicines, vitamins, skincare and everyday healthcare products with a cart, checkout, prescription upload and order tracking.' },
   { icon: '↩️', title: 'Payments and refunds', text: 'Pay online or at the clinic. Refund status is visible from start to finish.' },
-  { icon: '🔔', title: 'Notifications', text: 'Updates for bookings, cancellations, orders and refunds in one place.' },
-  { icon: '👩‍⚕️', title: 'For doctors', text: 'Doctors manage their profile, working hours, sessions and appointments from their own dashboard.' },
-];
-
-const SOON = [
-  'Live queue and token numbers',
-  'Patient and doctor chat',
-  'Voice and video consultations',
-  'Maps view of nearby clinics',
-  'AI help assistant',
-  'Prescription upload for prescription medicines',
+  { icon: '💬', title: 'Chat and consultations', text: 'Message your doctor, share images and documents, and join voice or video calls after a confirmed appointment.' },
+  { icon: '🤖', title: 'Help assistant', text: 'Ask the assistant to find doctors, understand booking and refunds, or check your appointment, order and refund status.' },
+  { icon: '👩‍⚕️', title: 'For doctors', text: 'Doctors manage their profile, working hours, sessions, queue and appointments from their own dashboard.' },
 ];
 
 const SAFETY = [
   'Doctors appear publicly only after an administrator reviews their application.',
   'Passwords are stored as secure hashes and never shown to anyone.',
   'Access is role-based and enforced on the server: patients, doctors and admins see only what they are allowed to.',
+  'Chat messages, prescriptions and doctor documents are private and are not publicly accessible.',
   'Your location is used only when you ask for nearby doctors and is not saved to your profile.',
-  'Prescription medicines cannot be ordered until prescription verification is available.',
+  'Prescription medicines are sold only against a prescription that an administrator has verified.',
 ];
 
 export default function About() {
@@ -70,16 +64,6 @@ export default function About() {
             MediCare does not diagnose conditions or replace a qualified doctor. In an emergency, call 112.
           </p>
         </div>
-      </section>
-
-      <section className="mc-block">
-        <div className="mc-sec-head"><h3>Coming soon</h3></div>
-        <div className="d-flex flex-wrap justify-content-center gap-2">
-          {SOON.map((s) => <span key={s} className="mc-chip">{s}</span>)}
-        </div>
-        {/* <p className="text-center small mc-muted mt-3 mb-0">
-          Online payments are currently in test mode while we prepare for live payments.
-        </p> */}
       </section>
     </div>
   );

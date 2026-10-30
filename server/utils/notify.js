@@ -1,12 +1,17 @@
 import Notification from '../models/Notification.js';
 import Doctor from '../models/Doctor.js';
 import { emitToUser } from '../socket.js';
+import { emailNotification } from './emailNotify.js';
 
-// Notification fail ho to bhi main kaam na ruke
+// Notification ya email fail ho to bhi main kaam na ruke
 export const notify = async (userId, { type, title, message, link = '' }) => {
   try {
     const n = await Notification.create({ user: userId, type, title, message, link });
     emitToUser(userId, 'notification:new');
+    // Email background mein, kisi ko rokta nahi
+    emailNotification(userId, { type, title, link }).catch((err) =>
+      console.error('Email notification failed:', err.message)
+    );
     return n;
   } catch (err) {
     console.error('Notification failed:', err.message);

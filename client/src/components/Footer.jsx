@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { SITE } from '../config/site';
 
 export default function Footer() {
+  const social = SITE.social.filter((s) => s.url);
+
   return (
     <footer className="mc-footer">
       <div className="container-xl">
@@ -10,10 +12,17 @@ export default function Footer() {
             <Link to="/" className="mc-logo mb-2">
               <span className="mc-logo-icon">+</span> {SITE.name}
             </Link>
-            <p className="mc-muted small mb-0">
+            <p className="mc-muted small">
               Find verified doctors, book appointments and order medicines and healthcare products,
               all in one place.
             </p>
+            {social.length > 0 && (
+              <div className="d-flex flex-wrap gap-3 small">
+                {social.map((s) => (
+                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="col-6 col-md-2">
@@ -21,6 +30,7 @@ export default function Footer() {
             <ul className="list-unstyled small mb-0">
               <li><Link to="/">Home</Link></li>
               <li><Link to="/find-doctor">Find a Doctor</Link></li>
+              <li><Link to="/map">Doctors on map</Link></li>
               <li><Link to="/buy-medicines">Buy Medicines</Link></li>
               <li><Link to="/categories">Categories</Link></li>
               <li><Link to="/about">About Us</Link></li>
