@@ -6,6 +6,8 @@ import { useCart } from '../context/CartContext';
 import { usePrefs } from '../context/PrefsContext';
 import NotificationBell from './NotificationBell';
 import SettingsMenu from './SettingsMenu';
+import Logo from './Logo';
+import { AppIcon } from './Icon';
 
 const links = [
   { to: '/', key: 'nav_home' },
@@ -37,8 +39,8 @@ export default function Navbar() {
       <div className="container-fluid px-3 px-lg-4">
         <div className="d-flex align-items-center gap-2">
           <SettingsMenu />
-          <Link to="/" className="mc-logo" onClick={close}>
-            <span className="mc-logo-icon">+</span> MediCare
+          <Link to="/" className="mc-logo" onClick={close} aria-label="MediCare home">
+            <Logo />
           </Link>
         </div>
 
@@ -76,12 +78,13 @@ export default function Navbar() {
               aria-label="Switch light/dark theme"
               title="Switch theme"
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />
             </button>
 
             {user ? (
               <>
                 <Link to="/profile" className="mc-user-chip" onClick={close}>
+                  {user.avatar && <img className="mc-nav-av" src={user.avatar} alt="" />}
                   {user.name.split(' ')[0]}
                   <small className="ms-1 mc-muted text-capitalize">({user.role})</small>
                 </Link>

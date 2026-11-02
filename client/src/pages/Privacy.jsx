@@ -12,6 +12,7 @@ const SECTIONS = [
   { title: 'Your choices', text: 'You can edit your name, phone number and address from your profile. To ask for your data to be corrected or deleted, contact support.' },
   { title: 'Medical information', text: 'MediCare is not a substitute for professional medical advice, diagnosis or treatment.' },
   { title: 'Changes', text: 'We may update this policy and will show the latest version on this page.' },
+    { title: 'Deleting your account', text: 'You can delete your account from your profile after confirming with a code sent to your email. Your personal details, photo, prescriptions and cart are removed. Records of past payments, orders and appointments are kept in anonymised form for accounting and legal reasons.' },
 ];
 
 export default function Privacy() {

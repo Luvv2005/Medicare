@@ -1,14 +1,12 @@
-export const CATEGORY_NAMES = {
-  'pain-relief': 'Pain Relief',
-  'cold-and-fever': 'Cold & Fever',
-  digestive: 'Digestive Care',
-  vitamins: 'Vitamins',
-  supplements: 'Supplements',
-  skincare: 'Skincare',
-  haircare: 'Haircare',
-  'personal-care': 'Personal Care',
-  oils: 'Oils',
+// Backend ke productCategories.js jaisa hi rule
+const OVERRIDES = {
+  skincare: 'Skin Care',
+  haircare: 'Hair Care',
   sanitary: 'Sanitary Products',
+  'womens-health': "Women's Health",
+  'mens-health': "Men's Health",
 };
 
-export const categoryName = (slug) => CATEGORY_NAMES[slug] || slug;
+export const categoryName = (slug = '') =>
+  OVERRIDES[slug] ||
+  slug.split('-').filter(Boolean).map((w) => (w === 'and' ? '&' : w[0].toUpperCase() + w.slice(1))).join(' ');

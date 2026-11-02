@@ -1,14 +1,18 @@
-export const PRODUCT_CATEGORIES = [
-  { slug: 'pain-relief', name: 'Pain Relief', icon: '💊' },
-  { slug: 'cold-and-fever', name: 'Cold & Fever', icon: '🤒' },
-  { slug: 'digestive', name: 'Digestive Care', icon: '🫧' },
-  { slug: 'vitamins', name: 'Vitamins', icon: '🍊' },
-  { slug: 'supplements', name: 'Supplements', icon: '💪' },
-  { slug: 'skincare', name: 'Skincare', icon: '🧴' },
-  { slug: 'haircare', name: 'Haircare', icon: '💆' },
-  { slug: 'personal-care', name: 'Personal Care', icon: '🪥' },
-  { slug: 'oils', name: 'Oils', icon: '🫒' },
-  { slug: 'sanitary', name: 'Sanitary Products', icon: '🩹' },
-];
+import { ROWS } from '../data/catalog.js';
+
+// Jin slugs ka naam seedha slug se nahi banta
+const OVERRIDES = {
+  skincare: 'Skin Care',
+  haircare: 'Hair Care',
+  sanitary: 'Sanitary Products',
+  'womens-health': "Women's Health",
+  'mens-health': "Men's Health",
+};
+
+export const nameOf = (slug) =>
+  OVERRIDES[slug] ||
+  slug.split('-').map((w) => (w === 'and' ? '&' : w[0].toUpperCase() + w.slice(1))).join(' ');
+
+export const PRODUCT_CATEGORIES = ROWS.map((r) => ({ slug: r[0], icon: r[1], name: nameOf(r[0]) }));
 
 export const CATEGORY_SLUGS = PRODUCT_CATEGORIES.map((c) => c.slug);

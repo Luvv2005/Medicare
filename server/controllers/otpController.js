@@ -14,8 +14,14 @@ const same = (a, b) => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
+const SUBJECT = {
+  reset: 'MediCare password reset code',
+  verify: 'MediCare verification code',
+  delete: 'MediCare account deletion code',
+};
+
 // 60 second ke andar dobara code nahi
-async function issue(email, purpose) {
+export async function issue(email, purpose) {
   const old = await Otp.findOne({ email, purpose });
   if (old && Date.now() - old.sentAt.getTime() < 60000) return { wait: true };
   const code = String(crypto.randomInt(100000, 1000000));
@@ -29,14 +35,14 @@ async function issue(email, purpose) {
   );
   await sendMail(
     email,
-    purpose === 'reset' ? 'MediCare password reset code' : 'MediCare verification code',
+    SUBJECT[purpose],
     `Your MediCare code is ${code}. It expires in 10 minutes. If you did not request it, ignore this email.`
   );
   return {};
 }
 
 // Max 5 galat koshish, 10 minute validity
-async function check(email, purpose, code) {
+export async function check(email, purpose, code) {
   const otp = await Otp.findOneAndUpdate({ email, purpose }, { $inc: { attempts: 1 } }, { new: true });
   if (!otp || otp.expiresAt < new Date() || otp.attempts > 5) return false;
   if (!same(otp.codeHash, hash(email, purpose, String(code || '')))) return false;
@@ -44,7 +50,7 @@ async function check(email, purpose, code) {
   return true;
 }
 
-// POST /api/auth/send-verify-otp   (login zaroori)
+// POST /api/auth/send-verify-otp
 export const sendVerifyOtp = asyncHandler(async (req, res) => {
   if (req.user.isEmailVerified) return res.status(400).json({ message: 'Email is already verified' });
   try {
@@ -64,7 +70,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   res.json({ message: 'Email verified' });
 });
 
-// POST /api/auth/forgot-password   body: { email }   (hamesha same jawab, email exist karta hai ya nahi chhupa rehta hai)
+// POST /api/auth/forgot-password   body: { email }
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!emailRegex.test(email)) return res.status(400).json({ message: 'Please enter a valid email' });

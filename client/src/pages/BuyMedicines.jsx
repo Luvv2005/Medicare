@@ -68,7 +68,7 @@ export default function BuyMedicines() {
       {msg && <div className="mc-note mb-3" role="status">{msg}</div>}
 
       <div className="row g-2 mb-3">
-        <div className="col-12 col-md">
+        <div className="col-12 col-lg">
           <input
             className="form-control"
             value={searchText}
@@ -77,7 +77,15 @@ export default function BuyMedicines() {
             aria-label="Search products"
           />
         </div>
-        <div className="col-6 col-md-3">
+        <div className="col-12 col-md-6 col-lg-3">
+          <select className="form-select" value={get('category')} onChange={(e) => setParam('category', e.target.value)} aria-label="Category">
+            <option value="">All categories ({cats.length})</option>
+            {cats.map((c) => (
+              <option key={c.slug} value={c.slug}>{c.name} ({c.count})</option>
+            ))}
+          </select>
+        </div>
+        <div className="col-6 col-md-3 col-lg-2">
           <select className="form-select" value={get('sort')} onChange={(e) => setParam('sort', e.target.value)} aria-label="Sort">
             <option value="">Name (A-Z)</option>
             <option value="price_asc">Price: low to high</option>
@@ -85,28 +93,13 @@ export default function BuyMedicines() {
             <option value="newest">Newest</option>
           </select>
         </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-3 col-lg-2">
           <select className="form-select" value={get('rx')} onChange={(e) => setParam('rx', e.target.value)} aria-label="Prescription filter">
             <option value="">Rx and non-Rx</option>
-            <option value="no">No prescription needed</option>
+            <option value="no">No prescription</option>
             <option value="yes">Prescription required</option>
           </select>
         </div>
-      </div>
-
-      <div className="mc-chips mb-2">
-        <button className={`mc-chip-btn ${!get('category') ? 'active' : ''}`} onClick={() => setParam('category', '')}>
-          All
-        </button>
-        {cats.map((c) => (
-          <button
-            key={c.slug}
-            className={`mc-chip-btn ${get('category') === c.slug ? 'active' : ''}`}
-            onClick={() => setParam('category', c.slug)}
-          >
-            {c.name}
-          </button>
-        ))}
       </div>
 
       <div className="form-check mb-3">

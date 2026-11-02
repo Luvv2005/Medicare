@@ -13,7 +13,6 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^\d{6}$/;
 
-// Public response mein ye private fields nahi jayengi
 const PUBLIC_EXCLUDE = '-user -reviewedBy -rejectionReason -documents -__v';
 
 const toList = (value) => {
@@ -22,7 +21,6 @@ const toList = (value) => {
   return [];
 };
 
-// GET /api/doctors/specializations
 export const getSpecializations = (req, res) => {
   res.json({ specializations: SPECIALIZATIONS });
 };
@@ -36,6 +34,7 @@ export const registerDoctor = asyncHandler(async (req, res) => {
     clinic = {}, consultationFee, modes = {}, payAtClinic, bio,
   } = req.body;
 
+  const doctorType = req.body.doctorType === 'local' ? 'local' : 'specialist';
   const qualifications = toList(req.body.qualifications);
   const languages = toList(req.body.languages);
 
@@ -54,7 +53,7 @@ export const registerDoctor = asyncHandler(async (req, res) => {
   if (!registrationNumber || !registrationCouncil)
     return res.status(400).json({ message: 'Medical registration number and council are required' });
   if (!clinic.name || !clinic.address || !clinic.city || !clinic.state)
-    return res.status(400).json({ message: 'Clinic name, address, city and state are required' });
+    return res.status(400).json({ message: 'Clinic name, address, village/city and state are required' });
   if (!pincodeRegex.test(String(clinic.pincode || '')))
     return res.status(400).json({ message: 'Valid 6-digit pincode is required' });
   const fee = Number(consultationFee);
@@ -81,6 +80,7 @@ export const registerDoctor = asyncHandler(async (req, res) => {
     doctor = await Doctor.create({
       user: user._id,
       name: name.trim(),
+      doctorType,
       specialization,
       qualifications,
       experienceYears: exp,
@@ -123,20 +123,23 @@ const SORTS = {
   exp: { experienceYears: -1, _id: 1 },
 };
 
-// GET /api/doctors/cities
 export const getCities = asyncHandler(async (req, res) => {
   const cities = await Doctor.distinct('clinic.city', { status: 'approved' });
   res.json({ cities: cities.sort((a, b) => a.localeCompare(b)) });
 });
 
-// GET /api/doctors  (public, sirf approved)
-// Query: q, specialization, city, mode, minFee, maxFee, minExp, availability, sort, page, limit, lat, lng, radius(km)
+// GET /api/doctors
+// Query: q, type (specialist|local), specialization, city, mode, minFee, maxFee, minExp, availability, sort, page, limit, lat, lng, radius
 export const listDoctors = asyncHandler(async (req, res) => {
-  const { q, specialization, city, mode, minFee, maxFee, minExp, sort, lat, lng, radius } = req.query;
+  const { q, type, specialization, city, mode, minFee, maxFee, minExp, sort, lat, lng, radius } = req.query;
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 12, 1), 50);
 
   const filter = { status: 'approved' };
+
+  // Purane doctors mein doctorType nahi hota, wo specialist maane jate hain
+  if (type === 'local') filter.doctorType = 'local';
+  if (type === 'specialist') filter.doctorType = { $ne: 'local' };
 
   if (specialization) filter.specialization = exactRx(specialization);
   if (city) filter['clinic.city'] = exactRx(city);
@@ -157,7 +160,6 @@ export const listDoctors = asyncHandler(async (req, res) => {
     };
   }
 
-  // ---- Smart search ----
   let interpreted = null;
   let nameTokens = [];
   if (q && String(q).trim()) {
@@ -186,16 +188,13 @@ export const listDoctors = asyncHandler(async (req, res) => {
       const ids = candidates
         .filter((c) => {
           const words = c.name.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
-          return nameTokens.every((t) =>
-            words.some((w) => levenshtein(t, w) <= allowedDistance(t))
-          );
+          return nameTokens.every((t) => words.some((w) => levenshtein(t, w) <= allowedDistance(t)));
         })
         .map((c) => c._id);
       finalFilter = { ...filter, _id: { $in: ids } };
     }
   }
 
-  // ---- Availability filter (asli free slots dekh kar) ----
   if (AVAILABILITY_RANGES.includes(req.query.availability)) {
     const ids = await doctorIdsAvailable(finalFilter, req.query.availability, mode);
     finalFilter = { $and: [finalFilter, { _id: { $in: ids } }] };
@@ -213,7 +212,6 @@ export const listDoctors = asyncHandler(async (req, res) => {
   res.json({ total, page, pages: Math.ceil(total / limit), interpreted, doctors });
 });
 
-// GET /api/doctors/:id  (public, sirf approved)
 export const getDoctor = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id))
     return res.status(404).json({ message: 'Doctor not found' });
@@ -224,14 +222,12 @@ export const getDoctor = asyncHandler(async (req, res) => {
   res.json({ doctor });
 });
 
-// GET /api/doctors/me/profile
 export const getMyProfile = asyncHandler(async (req, res) => {
   const doctor = await Doctor.findOne({ user: req.user._id });
   if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
   res.json({ doctor });
 });
 
-// PUT /api/doctors/me/profile  (sirf safe fields)
 export const updateMyProfile = asyncHandler(async (req, res) => {
   const doctor = await Doctor.findOne({ user: req.user._id });
   if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });

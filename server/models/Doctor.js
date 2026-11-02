@@ -1,15 +1,13 @@
 import mongoose from 'mongoose';
-import { SPECIALIZATIONS, DOCTOR_STATUS } from '../utils/constants.js';
+import { SPECIALIZATIONS, DOCTOR_STATUS, DOCTOR_TYPES } from '../utils/constants.js';
 
 const doctorSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      unique: true,
-    },
-    name: { type: String, required: true, trim: true }, // search ke liye copy
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    name: { type: String, required: true, trim: true },
+
+    // specialist = normal specialist doctor, local = gaon/kasbe ke clinic wale doctor
+    doctorType: { type: String, enum: DOCTOR_TYPES, default: 'specialist' },
 
     specialization: { type: String, required: true, enum: SPECIALIZATIONS },
     qualifications: [{ type: String, trim: true }],
@@ -26,7 +24,6 @@ const doctorSchema = new mongoose.Schema(
       city: { type: String, required: true, trim: true },
       state: { type: String, required: true, trim: true },
       pincode: { type: String, required: true, trim: true },
-      // GeoJSON: [longitude, latitude]. Maps/nearby search ke liye (Step 5 aur 10)
       location: {
         type: { type: String, enum: ['Point'] },
         coordinates: { type: [Number], default: undefined },
@@ -40,7 +37,6 @@ const doctorSchema = new mongoose.Schema(
     },
     payAtClinic: { type: Boolean, default: false },
 
-    // File upload baad mein aayega. Abhi sirf fields.
     profilePhoto: { type: String, default: '' },
     documents: [{ label: String, url: String }],
 
@@ -49,7 +45,6 @@ const doctorSchema = new mongoose.Schema(
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reviewedAt: { type: Date },
 
-    // Real doctor ka rating count 0 se shuru hota hai. Demo rating par isDemo: true.
     rating: {
       value: { type: Number, default: 0, min: 0, max: 5 },
       count: { type: Number, default: 0, min: 0 },
@@ -61,8 +56,8 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Ek hi registration number dobara register nahi ho sakta
 doctorSchema.index({ registrationNumber: 1, registrationCouncil: 1 }, { unique: true });
 doctorSchema.index({ status: 1, specialization: 1, 'clinic.city': 1 });
+doctorSchema.index({ status: 1, doctorType: 1 });
 
 export default mongoose.model('Doctor', doctorSchema);

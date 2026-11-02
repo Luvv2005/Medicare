@@ -1,23 +1,29 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SITE } from '../config/site';
 
+function FooterArt() {
+  const [ok, setOk] = useState(true);
+  if (!ok)
+    return (
+      <div className="mc-foot-fallback" aria-hidden="true">
+        <span>🧑‍⚕️</span><span>🗓️</span><span>🛒</span>
+      </div>
+    );
+  return <img className="mc-foot-art" src="/footer-art.png" alt="" onError={() => setOk(false)} />;
+}
+
 export default function Footer() {
-  const social = SITE.social.filter((s) => s.url);
+  const social = (SITE.social || []).filter((s) => s.url);
 
   return (
     <footer className="mc-footer">
       <div className="container-xl">
         <div className="row g-4">
           <div className="col-12 col-md-4">
-            <Link to="/" className="mc-logo mb-2">
-              <span className="mc-logo-icon">+</span> {SITE.name}
-            </Link>
-            <p className="mc-muted small">
-              Find verified doctors, book appointments and order medicines and healthcare products,
-              all in one place.
-            </p>
+            <FooterArt />
             {social.length > 0 && (
-              <div className="d-flex flex-wrap gap-3 small">
+              <div className="d-flex flex-wrap gap-3 small mt-3">
                 {social.map((s) => (
                   <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
                 ))}
@@ -53,7 +59,7 @@ export default function Footer() {
             <ul className="list-unstyled small mb-0">
               <li><Link to="/buy-medicines?category=pain-relief">Pain Relief</Link></li>
               <li><Link to="/buy-medicines?category=vitamins">Vitamins</Link></li>
-              <li><Link to="/buy-medicines?category=skincare">Skincare</Link></li>
+              <li><Link to="/buy-medicines?category=skincare">Skin Care</Link></li>
               <li><Link to="/buy-medicines?category=supplements">Supplements</Link></li>
               <li><Link to="/categories">All categories</Link></li>
             </ul>
@@ -72,13 +78,14 @@ export default function Footer() {
         </div>
 
         <hr />
-        <p className="small mc-muted mb-1">
-          Information on this site is not a substitute for professional medical advice. In an
-          emergency, call 112 or go to the nearest hospital.
-        </p>
-        <p className="small mc-muted mb-0">
-          © {new Date().getFullYear()} {SITE.name}. All rights reserved.
-        </p>
+        <div className="mc-foot-bottom">
+          <p className="small mc-muted mb-1">
+            Your health matters to us. MediCare is committed to making quality healthcare more accessible, convenient and reliable.
+          </p>
+          <p className="small mc-muted mb-0">
+            © {new Date().getFullYear()} {SITE.name}. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

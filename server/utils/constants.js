@@ -1,5 +1,7 @@
 export const SPECIALIZATIONS = [
   'General Physician',
+  'General Practitioner',
+  'AYUSH Practitioner',
   'Cardiologist',
   'Dermatologist',
   'Pediatrician',
@@ -18,3 +20,4 @@ export const SPECIALIZATIONS = [
 ];
 
 export const DOCTOR_STATUS = ['pending', 'approved', 'rejected'];
+export const DOCTOR_TYPES = ['specialist', 'local'];

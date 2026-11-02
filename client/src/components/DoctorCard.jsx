@@ -4,7 +4,6 @@ import {
   initials, avatarColor, hasCoords, distanceKm, mapsUrl, directionsUrl,
 } from '../utils/doctorUtils';
 
-// layout: 'grid' (dark) ya 'list' (light, Apollo jaisa)
 export default function DoctorCard({ doctor: d, layout = 'grid', userLoc }) {
   const profile = `/doctors/${d._id}`;
   const km =
@@ -49,6 +48,7 @@ export default function DoctorCard({ doctor: d, layout = 'grid', userLoc }) {
       <div className="mc-doc-side">
         <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
           <span className="mc-doc-fee">₹{d.consultationFee}</span>
+          {d.doctorType === 'local' && <span className="mc-chip mc-chip--ok">🏡 Local clinic</span>}
           {d.modes.online && <span className="mc-chip">Online</span>}
           {d.modes.inPerson && <span className="mc-chip">In-person</span>}
           <span className="mc-chip mc-chip--ok">✓ Verified</span>

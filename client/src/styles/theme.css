@@ -741,3 +741,170 @@ html[data-motion='reduce'] *::after {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+
+
+/* Sirf LIGHT mode: hover par button gayab na ho */
+[data-bs-theme='light'] .btn-mc-success:hover,
+[data-bs-theme='light'] .btn-mc-success:focus,
+[data-bs-theme='light'] .btn-mc-green:hover,
+[data-bs-theme='light'] .btn-mc-green:focus {
+  filter: none;
+  background: #17805a;
+  border-color: #17805a;
+  color: #fff;
+}
+
+[data-bs-theme='light'] .btn-mc-outline:hover,
+[data-bs-theme='light'] .btn-mc-outline:focus,
+[data-bs-theme='light'] .btn-mc-primary:hover,
+[data-bs-theme='light'] .btn-mc-primary:focus {
+  filter: none;
+  background: #0b5568;
+  border-color: #0b5568;
+  color: #fff;
+}
+
+
+
+
+/* ===== Light mode: soft grey background so white cards stand out ===== */
+[data-bs-theme='light'] {
+  --mc-bg: #eef2f6;
+  --mc-surface: #ffffff;
+  --mc-surface-2: #e6ecf2;
+  --mc-border: #d5dde6;
+  --mc-navbar-bg: #ffffff;
+  --mc-shadow: 0 2px 12px rgba(20, 40, 70, 0.08);
+  --bs-body-bg: #eef2f6;
+}
+
+/* Subtle texture: faint dotted pattern on the page background */
+[data-bs-theme='light'] body {
+  background-color: #eef2f6;
+  background-image: radial-gradient(rgba(15, 107, 133, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+
+
+/* ===== LIGHT MODE: polished look ===== */
+[data-bs-theme='light'] {
+  --mc-bg: #eaf0f7;
+  --mc-surface: #ffffff;
+  --mc-surface-2: #f1f5fa;
+  --mc-border: #d3deea;
+  --mc-navbar-bg: rgba(255, 255, 255, 0.88);
+  --mc-shadow: 0 4px 18px rgba(30, 60, 110, 0.09);
+  --bs-body-bg: #eaf0f7;
+}
+
+/* Page background: soft gradient + faint glow, no flat white */
+[data-bs-theme='light'] body {
+  background-color: #eaf0f7;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(91, 124, 250, 0.13), transparent 38%),
+    radial-gradient(circle at 92% 18%, rgba(61, 187, 138, 0.12), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(139, 108, 246, 0.10), transparent 40%),
+    radial-gradient(rgba(15, 107, 133, 0.06) 1px, transparent 1px);
+  background-size: auto, auto, auto, 22px 22px;
+  background-attachment: fixed;
+}
+
+/* Navbar: frosted glass */
+[data-bs-theme='light'] .mc-navbar {
+  background: var(--mc-navbar-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--mc-border);
+  box-shadow: 0 2px 14px rgba(30, 60, 110, 0.07);
+}
+
+/* Cards: clean white, soft shadow, lift on hover */
+[data-bs-theme='light'] .mc-card,
+[data-bs-theme='light'] .mc-doc-card,
+[data-bs-theme='light'] .mc-prod,
+[data-bs-theme='light'] .mc-catcard,
+[data-bs-theme='light'] .mc-about-card,
+[data-bs-theme='light'] .mc-step,
+[data-bs-theme='light'] .mc-stat-chip,
+[data-bs-theme='light'] .mc-cat {
+  background: #ffffff;
+  border: 1px solid var(--mc-border);
+  box-shadow: var(--mc-shadow);
+}
+[data-bs-theme='light'] .mc-doc-card:hover,
+[data-bs-theme='light'] .mc-prod:hover {
+  box-shadow: 0 10px 28px rgba(30, 60, 110, 0.14);
+  transition: box-shadow 0.2s;
+}
+
+/* Big sections (flow boxes, safety, chat) */
+[data-bs-theme='light'] .mc-flowbox,
+[data-bs-theme='light'] .mc-cx {
+  background: #ffffff;
+  border-color: var(--mc-border);
+  box-shadow: var(--mc-shadow);
+}
+[data-bs-theme='light'] .mc-safe {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(91, 124, 250, 0.14), transparent 55%),
+    radial-gradient(circle at 90% 100%, rgba(61, 187, 138, 0.12), transparent 50%),
+    #ffffff;
+  box-shadow: var(--mc-shadow);
+}
+[data-bs-theme='light'] .mc-safe-tile {
+  background: #f4f8fc;
+}
+
+/* Chat: side panel + header slightly tinted */
+[data-bs-theme='light'] .mc-cx-side { background: #f7fafd; }
+[data-bs-theme='light'] .mc-cx-head { background: #f1f5fa; }
+
+/* Inputs: white with a clear border */
+[data-bs-theme='light'] .form-control,
+[data-bs-theme='light'] .form-select {
+  background: #ffffff;
+  border-color: #c9d6e4;
+}
+[data-bs-theme='light'] .form-control:focus,
+[data-bs-theme='light'] .form-select:focus {
+  background: #ffffff;
+  border-color: var(--mc-primary);
+  box-shadow: 0 0 0 0.2rem rgba(15, 107, 133, 0.18);
+}
+
+/* Home banner inputs keep their dark look */
+[data-bs-theme='light'] .mc-banner .form-control {
+  background: rgba(12, 26, 50, 0.88);
+  border-color: transparent;
+}
+
+/* Footer: slightly deeper tone than the page */
+[data-bs-theme='light'] .mc-footer {
+  background: linear-gradient(180deg, #e1e9f2, #d8e2ee);
+  border-top: 1px solid var(--mc-border);
+}
+
+/* Chips and notes */
+[data-bs-theme='light'] .mc-chip { background: #eef3f9; }
+[data-bs-theme='light'] .mc-note { background: #f4f8fc; }
+
+/* Hover on buttons must stay visible */
+[data-bs-theme='light'] .btn-mc-success:hover,
+[data-bs-theme='light'] .btn-mc-success:focus,
+[data-bs-theme='light'] .btn-mc-green:hover,
+[data-bs-theme='light'] .btn-mc-green:focus {
+  filter: none;
+  background: #17805a;
+  border-color: #17805a;
+  color: #fff;
+}
+[data-bs-theme='light'] .btn-mc-outline:hover,
+[data-bs-theme='light'] .btn-mc-outline:focus,
+[data-bs-theme='light'] .btn-mc-primary:hover,
+[data-bs-theme='light'] .btn-mc-primary:focus {
+  filter: none;
+  background: #0b5568;
+  border-color: #0b5568;
+  color: #fff;
+}

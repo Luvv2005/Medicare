@@ -36,9 +36,22 @@ export default function AssistantWidget() {
 
   return (
     <>
-      <button type="button" className="mc-ai-btn" aria-label="Open help assistant" onClick={() => setOpen(!open)}>
+      {/* <button type="button" className="mc-ai-btn" aria-label="Open help assistant" onClick={() => setOpen(!open)}>
         {open ? '✕' : '💬'}
-      </button>
+      </button> */}
+      <button type="button" className="mc-ai-btn" aria-label="Open help assistant" onClick={() => setOpen(!open)}>
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor"
+       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {open ? (
+      <path d="M6 6l12 12M18 6L6 18" />
+    ) : (
+      <>
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12Z" />
+        <path d="M9 11h6M9 14h4" />
+      </>
+    )}
+  </svg>
+</button>
 
       {open && (
         <div className="mc-ai" role="dialog" aria-label="Help assistant">

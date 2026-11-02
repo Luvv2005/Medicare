@@ -1,0 +1,100 @@
+/* .mc-ibadge {
+  display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 15px;
+  color: var(--mc-primary); background: var(--mc-surface-2); border: 1px solid var(--mc-border);
+} */
+
+/* Dark: halka gradient aur hover par thodi glow */
+/* [data-bs-theme='dark'] .mc-ibadge {
+  color: #a9c1ff;
+  background: linear-gradient(135deg, rgba(59, 156, 255, 0.16), rgba(139, 108, 246, 0.18));
+  border-color: rgba(124, 92, 240, 0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+[data-bs-theme='dark'] .mc-catcard:hover .mc-ibadge,
+[data-bs-theme='dark'] .mc-about-card:hover .mc-ibadge,
+[data-bs-theme='dark'] .mc-safe-tile:hover .mc-ibadge,
+[data-bs-theme='dark'] .mc-card.mc-hov:hover .mc-ibadge,
+[data-bs-theme='dark'] .mc-step:hover .mc-ibadge {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(124, 92, 240, 0.5);
+}
+
+.mc-catcard .mc-ibadge, .mc-about-card .mc-ibadge, .mc-safe-tile .mc-ibadge,
+.mc-card .mc-ibadge { margin-bottom: 0.4rem; }
+.mc-step .mc-ibadge { width: 44px; height: 44px; border-radius: 12px; }
+
+.mc-prod-img svg { color: #2b7fe0; width: 64px; height: 64px; stroke-width: 1.5; }
+.mc-prod-img--lg svg { width: 110px; height: 110px; }
+
+.mc-toggler svg { display: block; margin: auto; }
+.mc-bell svg { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bs-theme='dark'] .mc-ibadge { transition: none; }
+} */
+ /* ===== Icon colors (naya icon add karna ho to bas yahan ek line add karo) ===== */
+.mc-ibadge:has([class*="lucide-bone"]),     .mc-prod-img:has([class*="lucide-bone"]),     svg[class*="lucide-bone"]     { --ic: #f87171; }
+.mc-ibadge:has([class*="lucide-wind"]),     .mc-prod-img:has([class*="lucide-wind"]),     svg[class*="lucide-wind"]     { --ic: #38bdf8; }
+.mc-ibadge:has([class*="lucide-pill"]),     .mc-prod-img:has([class*="lucide-pill"]),     svg[class*="lucide-pill"]     { --ic: #fb923c; }
+.mc-ibadge:has([class*="lucide-leaf"]),     .mc-prod-img:has([class*="lucide-leaf"]),     svg[class*="lucide-leaf"]     { --ic: #4ade80; }
+.mc-ibadge:has([class*="lucide-sparkles"]), .mc-prod-img:has([class*="lucide-sparkles"]), svg[class*="lucide-sparkles"] { --ic: #f472b6; }
+.mc-ibadge:has([class*="lucide-droplet"]),  .mc-prod-img:has([class*="lucide-droplet"]),  svg[class*="lucide-droplet"]  { --ic: #2dd4bf; }
+.mc-ibadge:has([class*="lucide-flower"]),   .mc-prod-img:has([class*="lucide-flower"]),   svg[class*="lucide-flower"]   { --ic: #c084fc; }
+.mc-ibadge:has([class*="lucide-heart"]),    .mc-prod-img:has([class*="lucide-heart"]),    svg[class*="lucide-heart"]    { --ic: #fb7185; }
+.mc-ibadge:has([class*="lucide-stethoscope"]), .mc-prod-img:has([class*="lucide-stethoscope"]), svg[class*="lucide-stethoscope"] { --ic: #22d3ee; }
+.mc-ibadge:has([class*="lucide-calendar"]), .mc-prod-img:has([class*="lucide-calendar"]), svg[class*="lucide-calendar"] { --ic: #a78bfa; }
+.mc-ibadge:has([class*="lucide-phone"]),    .mc-prod-img:has([class*="lucide-phone"]),    svg[class*="lucide-phone"]    { --ic: #4ade80; }
+.mc-ibadge:has([class*="lucide-message"]),  .mc-prod-img:has([class*="lucide-message"]),  svg[class*="lucide-message"]  { --ic: #60a5fa; }
+.mc-ibadge:has([class*="lucide-map-pin"]),  .mc-prod-img:has([class*="lucide-map-pin"]),  svg[class*="lucide-map-pin"]  { --ic: #f87171; }
+.mc-ibadge:has([class*="lucide-shopping"]), .mc-prod-img:has([class*="lucide-shopping"]), svg[class*="lucide-shopping"] { --ic: #fbbf24; }
+.mc-ibadge:has([class*="lucide-user"]),     .mc-prod-img:has([class*="lucide-user"]),     svg[class*="lucide-user"]     { --ic: #818cf8; }
+.mc-ibadge:has([class*="lucide-shield"]),   .mc-prod-img:has([class*="lucide-shield"]),   svg[class*="lucide-shield"]   { --ic: #34d399; }
+.mc-ibadge:has([class*="lucide-clock"]),    .mc-prod-img:has([class*="lucide-clock"]),    svg[class*="lucide-clock"]    { --ic: #facc15; }
+.mc-ibadge:has([class*="lucide-truck"]),    .mc-prod-img:has([class*="lucide-truck"]),    svg[class*="lucide-truck"]    { --ic: #fb923c; }
+
+/* Navbar / baaki icons */
+svg[class*="lucide-menu"]   { --ic: #60a5fa; }
+svg[class*="lucide-bell"]   { --ic: #fbbf24; }
+svg[class*="lucide-search"] { --ic: #38bdf8; }
+svg[class*="lucide-sun"]    { --ic: #facc15; }
+svg[class*="lucide-moon"]   { --ic: #a78bfa; }
+svg[class*="lucide-x"]      { --ic: #f87171; }
+
+/* Har lucide icon pe color apply */
+svg[class*="lucide"] {
+  color: var(--ic, var(--mc-primary)) !important;
+  stroke: currentColor !important;
+}
+
+/* Badge */
+.mc-ibadge {
+  display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 15px;
+  color: var(--ic, var(--mc-primary));
+  background: color-mix(in srgb, var(--ic, var(--mc-primary)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ic, var(--mc-primary)) 35%, transparent);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mc-catcard:hover .mc-ibadge,
+.mc-about-card:hover .mc-ibadge,
+.mc-safe-tile:hover .mc-ibadge,
+.mc-card.mc-hov:hover .mc-ibadge,
+.mc-step:hover .mc-ibadge {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--ic, var(--mc-primary)) 50%, transparent);
+}
+
+.mc-catcard .mc-ibadge, .mc-about-card .mc-ibadge, .mc-safe-tile .mc-ibadge,
+.mc-card .mc-ibadge { margin-bottom: 0.4rem; }
+.mc-step .mc-ibadge { width: 44px; height: 44px; border-radius: 12px; }
+
+/* Product images */
+.mc-prod-img svg { width: 64px; height: 64px; stroke-width: 1.5; }
+.mc-prod-img--lg svg { width: 110px; height: 110px; }
+
+.mc-toggler svg { display: block; margin: auto; }
+.mc-bell svg { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-ibadge { transition: none; }
+}

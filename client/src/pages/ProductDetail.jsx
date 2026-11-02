@@ -49,7 +49,6 @@ export default function ProductDetail() {
           <div className="d-flex flex-wrap gap-1 mb-2">
             <span className="mc-chip">{categoryName(p.category)}</span>
             {p.requiresPrescription && <span className="mc-chip mc-chip--bad">Prescription required</span>}
-            {p.isDemo && <span className="mc-chip mc-chip--demo">DEMO PRODUCT</span>}
           </div>
           <h2 className="mb-1">{p.name}</h2>
           {p.brand && <div className="mc-muted mb-2">by {p.brand}</div>}
@@ -65,8 +64,8 @@ export default function ProductDetail() {
           </div>
 
           {out && <p className="mc-bad">Out of stock</p>}
-          {!out && p.stock <= 5 && <p className="mc-warn">Only {p.stock} left{p.isDemo ? ' (demo stock)' : ''}</p>}
-          {!out && p.stock > 5 && <p className="mc-ok">In stock{p.isDemo ? ' (demo stock)' : ''}</p>}
+          {!out && p.stock <= 5 && <p className="mc-warn">Only {p.stock} left</p>}
+          {!out && p.stock > 5 && <p className="mc-ok">In stock</p>}
 
           <p>{p.description || 'No description added yet.'}</p>
 

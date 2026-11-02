@@ -1,0 +1,21 @@
+/* ===== About hero ===== */
+.mc-about-hero { text-align: center; padding: 2rem 0 1rem; }
+.mc-about-h1 {
+  font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15;
+  font-size: clamp(1.8rem, 5vw, 3.4rem); max-width: 1000px; margin: 1.2rem auto 1rem;
+}
+
+/* ===== Footer image: columns ke beech vertically center ===== */
+.mc-footer .row > .col-12.col-md-4 {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+
+/* ===== Swipe toggle: halka effect ===== */
+.mc-sw-thumb { transition: transform 0.3s ease; }
+.mc-sw-pill { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18); transition: box-shadow 0.35s ease; }
+.mc-sw.moving .mc-sw-pill { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 10px 1px rgba(255, 255, 255, 0.45); }
+.mc-sw-pill::after { display: none; }
+
+/* ===== Doctor type tabs ===== */
+.mc-type-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+

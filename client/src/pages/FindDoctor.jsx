@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiGet } from '../services/api';
-import { useTheme } from '../context/ThemeContext';
+// import { useTheme } from '../context/ThemeContext';
 import useDebounce from '../hooks/useDebounce';
 import DoctorCard from '../components/DoctorCard';
 import PageHeader from '../components/PageHeader';
@@ -29,6 +29,11 @@ const AVAILABILITY = [
   { value: 'tomorrow', label: 'Tomorrow' },
   { value: 'week', label: 'Next 7 days' },
 ];
+const TYPES = [
+  { value: '', label: 'All doctors' },
+  { value: 'specialist', label: 'Specialists' },
+  { value: 'local', label: '🏡 Local clinics (village / town)' },
+];
 
 function Radio({ name, options, current, onPick }) {
   return options.map((o) => (
@@ -49,7 +54,7 @@ function Radio({ name, options, current, onPick }) {
 }
 
 export default function FindDoctor() {
-  const { theme } = useTheme();
+  // const { theme } = useTheme();
   const [params, setParams] = useSearchParams();
   const get = (key) => params.get(key) || '';
 
@@ -87,7 +92,7 @@ export default function FindDoctor() {
 
   useEffect(() => {
     const qs = new URLSearchParams();
-    ['q', 'specialization', 'city', 'mode', 'sort', 'minExp', 'availability', 'page'].forEach((k) => {
+    ['q', 'type', 'specialization', 'city', 'mode', 'sort', 'minExp', 'availability', 'page'].forEach((k) => {
       if (get(k)) qs.set(k, get(k));
     });
     const fee = get('fee');
@@ -141,14 +146,26 @@ export default function FindDoctor() {
     stopLocation();
   };
 
-  const layout = theme === 'dark' ? 'grid' : 'list';
+  // const layout = theme === 'dark' ? 'grid' : 'list';
+  const layout = 'list';
   const hasDemo = data.doctors.some((d) => d.isDemo);
   const page = Number(get('page')) || 1;
   const it = data.interpreted;
+  const type = get('type');
 
   return (
     <div className="container-xl py-4">
       <PageHeader title="Find a Doctor" subtitle="Search verified doctors by name, specialization or city." />
+
+      <div className="mc-type-tabs">
+        {TYPES.map((t) => (
+          <button key={t.value || 'all'} type="button"
+            className={`mc-chip-btn ${type === t.value ? 'active' : ''}`}
+            onClick={() => setParam('type', t.value)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <form
         className="d-flex gap-2 mb-3"
@@ -228,9 +245,9 @@ export default function FindDoctor() {
             </div>
 
             <div className="mc-filter-group">
-              <h6>City</h6>
+              <h6>Village / city</h6>
               <select className="form-select" value={get('city')} onChange={(e) => setParam('city', e.target.value)}>
-                <option value="">All cities</option>
+                <option value="">All places</option>
                 {cities.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -257,6 +274,13 @@ export default function FindDoctor() {
         </aside>
 
         <section className="col-lg-9">
+          {type === 'local' && (
+            <div className="mc-note mb-3">
+              Local clinic doctors run village and town clinics. Press <strong>Use my location</strong> to
+              see the nearest clinics first.
+            </div>
+          )}
+
           {it && (it.specialization || it.city) && (
             <div className="mc-note mb-3">
               Showing {it.specialization || 'doctors'}
@@ -282,7 +306,7 @@ export default function FindDoctor() {
           {!loading && !error && data.doctors.length === 0 && (
             <div className="mc-card text-center">
               <h5>No doctors found</h5>
-              <p className="mc-muted">Try a different spelling, another city, or clear the filters.</p>
+              <p className="mc-muted">Try a different spelling, another place, or clear the filters.</p>
               <button className="btn btn-mc-primary" onClick={clearAll}>Clear filters</button>
             </div>
           )}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { categoryName } from '../utils/categories';
 import { money } from '../utils/orderUi';
+import { CategoryIcon } from './Icon';
 
 export default function ProductCard({ product: p, onAdd, adding }) {
   const off = p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
@@ -9,13 +10,12 @@ export default function ProductCard({ product: p, onAdd, adding }) {
   return (
     <article className="mc-prod">
       <Link to={`/medicines/${p._id}`} className="mc-prod-img" aria-label={`View ${p.name}`}>
-        {p.image ? <img src={p.image} alt={p.name} /> : <span>{p.icon}</span>}
+        {p.image ? <img src={p.image} alt={p.name} /> : <CategoryIcon slug={p.category} size={64} />}
       </Link>
 
       <div className="d-flex flex-wrap gap-1 mb-2">
         <span className="mc-chip">{categoryName(p.category)}</span>
         {p.requiresPrescription && <span className="mc-chip mc-chip--bad">Rx</span>}
-        {p.isDemo && <span className="mc-chip mc-chip--demo">DEMO</span>}
       </div>
 
       <h6 className="mb-1">{p.name}</h6>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { apiGet } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,11 +7,22 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^\d{6}$/;
 
+function Field({ label, children, hint }) {
+  return (
+    <div className="mb-3">
+      <label className="form-label">{label}</label>
+      {children}
+      {hint && <div className="form-text mc-muted">{hint}</div>}
+    </div>
+  );
+}
+
 export default function DoctorRegister() {
   const { user, registerDoctor } = useAuth();
 
   const [specs, setSpecs] = useState([]);
   const [form, setForm] = useState({
+    doctorType: 'specialist',
     name: '', email: '', phone: '', password: '', confirm: '',
     specialization: '', qualifications: '', experienceYears: '',
     registrationNumber: '', registrationCouncil: '',
@@ -43,6 +54,7 @@ export default function DoctorRegister() {
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
   };
   const onClinic = (e) => setClinic({ ...clinic, [e.target.name]: e.target.value });
+  const isLocal = form.doctorType === 'local';
 
   const validate = () => {
     if (form.name.trim().length < 2) return 'Please enter your full name';
@@ -59,7 +71,7 @@ export default function DoctorRegister() {
     if (!form.registrationNumber.trim() || !form.registrationCouncil.trim())
       return 'Medical registration number and council are required';
     if (!clinic.name.trim() || !clinic.address.trim() || !clinic.city.trim() || !clinic.state.trim())
-      return 'Clinic name, address, city and state are required';
+      return 'Clinic name, address, village/city and state are required';
     if (!pincodeRegex.test(clinic.pincode)) return 'Enter a valid 6-digit pincode';
     const fee = Number(form.consultationFee);
     if (form.consultationFee === '' || !Number.isFinite(fee) || fee < 0)
@@ -77,6 +89,7 @@ export default function DoctorRegister() {
     setSubmitting(true);
     try {
       await registerDoctor({
+        doctorType: form.doctorType,
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone,
@@ -99,22 +112,13 @@ export default function DoctorRegister() {
         languages: form.languages,
         bio: form.bio.trim(),
       });
-      // Success: user set ho gaya, upar wala "already logged in" screen dikhega.
-      // Isliye seedha dashboard bhejte hain:
       window.location.href = '/dashboard';
     } catch (err) {
       setError(err.message);
       setSubmitting(false);
     }
+    return undefined;
   };
-
-  const Field = ({ label, children, hint }) => (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
-      {children}
-      {hint && <div className="form-text mc-muted">{hint}</div>}
-    </div>
-  );
 
   return (
     <div className="container py-4">
@@ -129,6 +133,30 @@ export default function DoctorRegister() {
           {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
 
           <form onSubmit={submit} noValidate>
+            <h6 className="mc-section">Practice type</h6>
+            <div className="mb-3">
+              <div className="form-check">
+                <input className="form-check-input" type="radio" id="t-spec" name="doctorType" value="specialist"
+                  checked={!isLocal} onChange={on} />
+                <label className="form-check-label" htmlFor="t-spec">
+                  <strong>Specialist doctor</strong> (cardiologist, dermatologist and so on)
+                </label>
+              </div>
+              <div className="form-check">
+                <input className="form-check-input" type="radio" id="t-local" name="doctorType" value="local"
+                  checked={isLocal} onChange={on} />
+                <label className="form-check-label" htmlFor="t-local">
+                  <strong>Local clinic doctor</strong> (village or town clinic, general practice)
+                </label>
+              </div>
+              {isLocal && (
+                <div className="form-text mc-muted">
+                  You still need a valid medical registration (for example MBBS, BAMS or BHMS) from a
+                  recognised council. The admin verifies it before you are listed.
+                </div>
+              )}
+            </div>
+
             <h6 className="mc-section">Account</h6>
             <div className="row">
               <div className="col-md-6"><Field label="Full name">
@@ -184,7 +212,7 @@ export default function DoctorRegister() {
               <div className="col-md-6"><Field label="Address">
                 <input className="form-control" name="address" value={clinic.address} onChange={onClinic} />
               </Field></div>
-              <div className="col-md-4"><Field label="City">
+              <div className="col-md-4"><Field label="Village / town / city">
                 <input className="form-control" name="city" value={clinic.city} onChange={onClinic} />
               </Field></div>
               <div className="col-md-4"><Field label="State">
@@ -220,7 +248,8 @@ export default function DoctorRegister() {
             </div>
 
             <p className="small mc-muted">
-              Profile photo and verification documents will be added with secure file upload in a later step.
+              After registering, upload your profile photo, registration certificate and set your clinic
+              map location from your dashboard.
             </p>
 
             <button className="btn btn-mc-primary w-100" type="submit" disabled={submitting}>

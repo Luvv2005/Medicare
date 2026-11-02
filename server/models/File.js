@@ -5,7 +5,7 @@ const fileSchema = new mongoose.Schema(
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     kind: {
       type: String,
-      enum: ['chat', 'prescription', 'doctor-photo', 'doctor-doc', 'product'],
+      enum: ['chat', 'prescription', 'doctor-photo', 'doctor-doc', 'product','avatar'],
       required: true,
     },
     name: String,

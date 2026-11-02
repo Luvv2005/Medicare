@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import File from '../models/File.js';
+import User from '../models/User.js';
 import Doctor from '../models/Doctor.js';
 import Product from '../models/Product.js';
 import Conversation from '../models/Conversation.js';
@@ -19,7 +20,7 @@ const send = (res, f, pub) => {
   return res.send(f.data);
 };
 
-// GET /api/files/public/:id   (doctor photo, product image)
+// GET /api/files/public/:id
 export const servePublic = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'File not found' });
   const f = await File.findOne({ _id: req.params.id, isPublic: true }).select('+data');
@@ -43,6 +44,29 @@ export const serveProtected = asyncHandler(async (req, res) => {
   return send(res, f, false);
 });
 
+// POST /api/files/avatar   (har logged-in user, admin bhi)
+export const uploadAvatar = asyncHandler(async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'Please choose an image' });
+  const f = await createFileDoc(req.file, req.user._id, 'avatar', {
+    ref: req.user._id, isPublic: true, imageOnly: true,
+  });
+  if (!f) return res.status(400).json({ message: 'That is not a valid JPG, PNG or WEBP image' });
+
+  const url = publicUrl(req, f._id);
+  await User.updateOne({ _id: req.user._id }, { avatar: url });
+  if (req.user.role === 'doctor') await Doctor.updateOne({ user: req.user._id }, { profilePhoto: url });
+  await File.deleteMany({ owner: req.user._id, kind: { $in: ['avatar', 'doctor-photo'] }, _id: { $ne: f._id } });
+  res.json({ avatar: url });
+});
+
+// DELETE /api/files/avatar
+export const removeAvatar = asyncHandler(async (req, res) => {
+  await User.updateOne({ _id: req.user._id }, { avatar: '' });
+  if (req.user.role === 'doctor') await Doctor.updateOne({ user: req.user._id }, { profilePhoto: '' });
+  await File.deleteMany({ owner: req.user._id, kind: { $in: ['avatar', 'doctor-photo'] } });
+  res.json({ avatar: '' });
+});
+
 // POST /api/files/doctor-photo
 export const uploadDoctorPhoto = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Please choose an image' });
@@ -53,6 +77,7 @@ export const uploadDoctorPhoto = asyncHandler(async (req, res) => {
   if (!f) return res.status(400).json({ message: 'That is not a valid JPG, PNG or WEBP image' });
   const url = publicUrl(req, f._id);
   await Doctor.updateOne({ _id: doctor._id }, { profilePhoto: url });
+  await User.updateOne({ _id: req.user._id }, { avatar: url });
   res.json({ profilePhoto: url });
 });
 

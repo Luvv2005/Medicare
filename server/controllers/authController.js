@@ -60,9 +60,9 @@ export const getMe = asyncHandler(async (req, res) => {
   res.json({ user: req.user });
 });
 
-// PUT /api/auth/profile   body: { name, phone, address }
+// PUT /api/auth/profile   body: { name, phone, gender, address }
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, phone, address } = req.body;
+  const { name, phone, gender, address } = req.body;
   const update = {};
 
   if (name !== undefined) {
@@ -78,6 +78,12 @@ export const updateProfile = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid 10-digit phone number' });
     update.phone = p;
     if (p !== req.user.phone) update.isPhoneVerified = false;
+  }
+
+  if (gender !== undefined) {
+    if (!['', 'male', 'female', 'other'].includes(gender))
+      return res.status(400).json({ message: 'Invalid gender' });
+    update.gender = gender;
   }
 
   if (address !== undefined) {
