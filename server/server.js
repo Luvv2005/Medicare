@@ -50,7 +50,17 @@ const app = express();
 if (prod) app.set('trust proxy', 1); // Render ek proxy ke peeche hai
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174'
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 // Razorpay webhook: signature ke liye RAW body chahiye, isliye express.json se PEHLE
 app.post('/api/payments/webhook', express.raw({ type: 'application/json', limit: '1mb' }), webhook);
