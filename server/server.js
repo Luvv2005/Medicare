@@ -54,7 +54,8 @@ app.use(helmet());
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:5174'
+  'http://localhost:5174',
+  'https://medicare-five-omega.vercel.app'
 ];
 
 app.use(cors({
