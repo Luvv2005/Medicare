@@ -4,6 +4,7 @@ import useSocketEvent from '../hooks/useSocketEvent';
 import AvailabilityEditor from '../components/AvailabilityEditor';
 import DoctorProfileEditor from '../components/DoctorProfileEditor';
 import DoctorQueue from '../components/DoctorQueue';
+import ResubmitForm from '../components/ResubmitForm';
 import { formatDate, formatTime, istToday } from '../utils/dates';
 import { effStatus, STATUS_CHIP, statusLabel, payLabel, refundLabel } from '../utils/appointmentUi';
 
@@ -147,14 +148,12 @@ export default function DoctorDashboard() {
 
   return (
     <>
-      {profile && profile.status !== 'approved' && (
-        <div className={`alert ${profile.status === 'rejected' ? 'alert-danger' : 'alert-warning'}`}>
-          {profile.status === 'pending' &&
-            'Your application is pending admin approval. You will appear in Find a Doctor after approval.'}
-          {profile.status === 'rejected' &&
-            `Your application was rejected: ${profile.rejectionReason || 'no reason given'}`}
+      {profile && profile.status === 'pending' && (
+        <div className="alert alert-warning">
+          Your application is pending admin approval. You will appear in Find a Doctor after approval.
         </div>
       )}
+      {profile && profile.status === 'rejected' && <ResubmitForm doctor={profile} onDone={load} />}
 
       <div className="mc-stats mb-3">
         {stats.map((s) => (

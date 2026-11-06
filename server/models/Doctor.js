@@ -6,7 +6,6 @@ const doctorSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     name: { type: String, required: true, trim: true },
 
-    // specialist = normal specialist doctor, local = gaon/kasbe ke clinic wale doctor
     doctorType: { type: String, enum: DOCTOR_TYPES, default: 'specialist' },
 
     specialization: { type: String, required: true, enum: SPECIALIZATIONS },
@@ -44,6 +43,7 @@ const doctorSchema = new mongoose.Schema(
     rejectionReason: { type: String, default: '' },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reviewedAt: { type: Date },
+    resubmitCount: { type: Number, default: 0 },
 
     rating: {
       value: { type: Number, default: 0, min: 0, max: 5 },

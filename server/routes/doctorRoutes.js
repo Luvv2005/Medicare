@@ -13,6 +13,7 @@ import {
   updateMyAvailability,
 } from '../controllers/availabilityController.js';
 import { getSlots } from '../controllers/appointmentController.js';
+import { resubmit } from '../controllers/resubmitController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 
@@ -22,9 +23,9 @@ router.get('/specializations', getSpecializations);
 router.get('/cities', getCities);
 router.post('/register', authLimiter, registerDoctor);
 
-// "/me/..." routes "/:id" se PEHLE hone chahiye
 router.get('/me/profile', protect, authorize('doctor'), getMyProfile);
 router.put('/me/profile', protect, authorize('doctor'), updateMyProfile);
+router.post('/me/resubmit', protect, authorize('doctor'), authLimiter, resubmit);
 router.get('/me/availability', protect, authorize('doctor'), getMyAvailability);
 router.put('/me/availability', protect, authorize('doctor'), updateMyAvailability);
 
