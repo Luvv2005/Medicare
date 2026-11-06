@@ -111,12 +111,16 @@ export default function Home() {
 
         <form className="d-flex gap-2" onSubmit={submit}>
           <input
-            className="form-control"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={kind === 'doctor' ? 'Try "skin specialist near Barnala"' : 'Search medicines…'}
-            aria-label="Search"
-          />
+  className="form-control"
+  id="home-search"
+  name="q"
+  type="search"
+  autoComplete="off"
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  placeholder={kind === 'doctor' ? 'Try "skin specialist near Barnala"' : 'Search medicines…'}
+  aria-label="Search"
+/>
           <button className="btn btn-mc-green" type="submit">Search</button>
         </form>
 
