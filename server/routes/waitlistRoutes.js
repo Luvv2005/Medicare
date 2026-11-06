@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { joinWaitlist, myWaitlist, acceptOffer, leaveOrDecline } from '../controllers/waitlistController.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { notSelf } from '../middleware/notSelf.js';
 
 const router = Router();
-router.use(protect, authorize('patient'));
+router.use(protect, authorize('patient', 'doctor'));
 
-router.post('/', joinWaitlist);
+router.post('/', notSelf, joinWaitlist);
 router.get('/mine', myWaitlist);
 router.post('/:id/accept', acceptOffer);
 router.delete('/:id', leaveOrDecline);

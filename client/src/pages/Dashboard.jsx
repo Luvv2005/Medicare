@@ -41,10 +41,25 @@ export default function Dashboard() {
           <PatientDashboard />
         </>
       )}
+
       {user.role === 'doctor' && (
         <>
           <DoctorMedia />
           <DoctorDashboard />
+
+          <div className="mc-block pb-0">
+            <h4 className="text-center mb-3">My own bookings and orders</h4>
+            <p className="mc-muted text-center small">
+              Appointments you booked with other doctors, and your medicine orders.
+            </p>
+            <div className="mb-3 d-flex flex-wrap justify-content-center gap-2">
+              <Link to="/find-doctor" className="btn btn-mc-primary">Find a doctor</Link>
+              <Link to="/buy-medicines" className="btn btn-mc-outline">Buy medicines</Link>
+              <Link to="/orders" className="btn btn-mc-outline">My medicine orders</Link>
+              <Link to="/payments" className="btn btn-mc-outline">Payment history</Link>
+            </div>
+            <PatientDashboard />
+          </div>
         </>
       )}
     </div>

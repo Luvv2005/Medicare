@@ -24,12 +24,12 @@ export default function Cart() {
       </div>
     );
 
-  if (user.role !== 'patient')
+  if (!['patient', 'doctor'].includes(user.role))
     return (
       <div className="container py-5">
         <div className="mc-card text-center mc-auth-wrap">
-          <h5>Cart is for patient accounts</h5>
-          <p className="mc-muted mb-0">Doctors and admins cannot place medicine orders.</p>
+          <h5>Cart is not available</h5>
+          <p className="mc-muted mb-0">Admin accounts cannot place medicine orders.</p>
         </div>
       </div>
     );

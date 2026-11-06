@@ -6,12 +6,13 @@ import { protect, authorize } from '../middleware/auth.js';
 
 // Webhook yahan nahi, server.js mein hai (raw body chahiye)
 const router = Router();
+const buyer = authorize('patient', 'doctor');
 
 router.get('/config', getConfig);
-router.get('/history', protect, authorize('patient'), getHistory);
-router.post('/mock-confirm', protect, authorize('patient'), mockConfirm);
-router.post('/create-order', protect, authorize('patient'), createAppointmentOrder);
-router.post('/orders/:id/create-order', protect, authorize('patient'), createMedicineOrder);
-router.post('/verify', protect, authorize('patient'), verifyPayment);
+router.get('/history', protect, buyer, getHistory);
+router.post('/mock-confirm', protect, buyer, mockConfirm);
+router.post('/create-order', protect, buyer, createAppointmentOrder);
+router.post('/orders/:id/create-order', protect, buyer, createMedicineOrder);
+router.post('/verify', protect, buyer, verifyPayment);
 
 export default router;

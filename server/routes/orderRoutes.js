@@ -3,7 +3,7 @@ import { placeOrder, myOrders, mockPayOrder, cancelOrder } from '../controllers/
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = Router();
-router.use(protect, authorize('patient'));
+router.use(protect, authorize('patient', 'doctor'));
 
 router.post('/', placeOrder);
 router.get('/mine', myOrders);

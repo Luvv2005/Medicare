@@ -19,7 +19,7 @@ export default function useAddToCart() {
 
   const add = async (product, qty = 1) => {
     if (!user) return navigate('/login', { state: { from: location } });
-    if (user.role !== 'patient') return setMsg('Only patient accounts can shop.');
+    if (!['patient', 'doctor'].includes(user.role)) return setMsg('Admin accounts cannot shop.');
     setBusyId(product._id);
     try {
       await addToCart(product._id, qty);

@@ -28,6 +28,8 @@ import Notifications from './pages/Notifications';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminVerify from './pages/AdminVerify';
 
+const BUYER = ['patient', 'doctor'];
+
 export default function App() {
   return (
     <>
@@ -65,10 +67,10 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
-          {/* Sirf patient */}
-          <Route path="/checkout" element={<ProtectedRoute roles={['patient']}><Checkout /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute roles={['patient']}><Orders /></ProtectedRoute>} />
-          <Route path="/payments" element={<ProtectedRoute roles={['patient']}><PaymentHistory /></ProtectedRoute>} />
+          {/* Patient aur doctor (doctor bhi dusron se book kar sakta hai aur medicines kharid sakta hai) */}
+          <Route path="/checkout" element={<ProtectedRoute roles={BUYER}><Checkout /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute roles={BUYER}><Orders /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute roles={BUYER}><PaymentHistory /></ProtectedRoute>} />
 
           {/* Sirf admin */}
           <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />

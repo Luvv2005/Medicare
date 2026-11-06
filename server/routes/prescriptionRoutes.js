@@ -5,7 +5,7 @@ import { uploadOne } from '../config/upload.js';
 import { uploadLimiter } from '../middleware/limiters.js';
 
 const router = Router();
-router.use(protect, authorize('patient'));
+router.use(protect, authorize('patient', 'doctor'));
 
 router.post('/', uploadLimiter, uploadOne('file'), uploadPrescription);
 router.get('/mine', myPrescriptions);

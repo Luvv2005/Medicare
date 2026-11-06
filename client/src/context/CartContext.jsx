@@ -15,7 +15,7 @@ export function CartProvider({ children }) {
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (user?.role !== 'patient') {
+    if (!['patient', 'doctor'].includes(user?.role)) {
       setCart(EMPTY);
       return;
     }

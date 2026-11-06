@@ -3,7 +3,7 @@ import { getCart, addItem, updateItem, removeItem } from '../controllers/cartCon
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = Router();
-router.use(protect, authorize('patient'));
+router.use(protect, authorize('patient', 'doctor'));
 
 router.get('/', getCart);
 router.post('/items', addItem);

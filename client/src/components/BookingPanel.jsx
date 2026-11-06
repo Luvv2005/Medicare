@@ -139,7 +139,8 @@ export default function BookingPanel({ doctor }) {
     );
   }
 
-  const isPatient = user?.role === 'patient';
+  // Patient aur doctor dono dusre doctor se book kar sakte hain
+  const isPatient = user?.role === 'patient' || user?.role === 'doctor';
   const allTaken = !loadingSlots && !slotError && slots.length > 0 && slots.every((s) => !s.available);
 
   return (
@@ -210,7 +211,7 @@ export default function BookingPanel({ doctor }) {
       )}
 
       {!held && user && !isPatient && (
-        <p className="mc-muted small mb-0">Only patient accounts can book appointments.</p>
+        <p className="mc-muted small mb-0">Admin accounts cannot book appointments.</p>
       )}
 
       {!held && isPatient && (
@@ -257,8 +258,8 @@ export default function BookingPanel({ doctor }) {
             {busy
               ? 'Please wait...'
               : method === 'online'
-                ? `Book and pay ₹${doctor.consultationFee}`
-                : 'Confirm booking (pay at clinic)'}
+              ? `Book and pay ₹${doctor.consultationFee}`
+              : 'Confirm booking (pay at clinic)'}
           </button>
         </>
       )}
